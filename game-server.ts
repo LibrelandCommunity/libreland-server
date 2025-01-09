@@ -1,18 +1,41 @@
+/**
+ * Game server implementation for Anyland server emulation.
+ * This server provides API endpoints and CDN functionality for area bundles,
+ * thing definitions, and user-generated content images.
+ * @module game-server
+ */
+
 import { join } from "path";
 import { Application, Router } from "oak";
 import { AreaInfoSchema } from "./lib/schemas.ts";
 
+/** API hostname for the main application server */
 const HOSTNAME_API = "app.anyland.com"
+/** CDN hostname for thing definitions */
 const HOSTNAME_CDN_THINGDEFS = "d6ccx151yatz6.cloudfront.net"
+/** CDN hostname for area bundles */
 const HOSTNAME_CDN_AREABUNDLES = "d26e4xubm8adxu.cloudfront.net"
 
 // TODO validate env
+/** Host configuration from environment */
 const HOST = Deno.env.get("HOST")
+/** API server port */
 const PORT_API = parseInt(Deno.env.get("PORT_API") || "3000")
+/** Thing definitions CDN server port */
 const PORT_CDN_THINGDEFS = parseInt(Deno.env.get("PORT_CDN_THINGDEFS") || "3001")
+/** Area bundles CDN server port */
 const PORT_CDN_AREABUNDLES = parseInt(Deno.env.get("PORT_CDN_AREABUNDLES") || "3002")
+/** User-generated content images CDN server port */
 const PORT_CDN_UGCIMAGES = parseInt(Deno.env.get("PORT_CDN_UGCIMAGES") || "3003")
 
+/**
+ * Generates a MongoDB-style ObjectId
+ * @param timestamp - Unix timestamp in milliseconds
+ * @param machineId - Identifier for the machine generating the ID
+ * @param processId - Process identifier
+ * @param counter - Increment counter for uniqueness
+ * @returns A 24-character hexadecimal ID string
+ */
 const generateObjectId_ = (timestamp: number, machineId: number, processId: number, counter: number) => {
     const hexTimestamp = Math.floor(timestamp / 1000).toString(16).padStart(8, '0');
     const hexMachineId = machineId.toString(16).padStart(6, '0');
@@ -22,10 +45,17 @@ const generateObjectId_ = (timestamp: number, machineId: number, processId: numb
     return hexTimestamp + hexMachineId + hexProcessId + hexCounter;
 }
 
+/** Counter for generating unique ObjectIds */
 let objIdCounter = 0;
+/**
+ * Generates a new ObjectId using current timestamp and incremental counter
+ * @returns A unique 24-character hexadecimal ID string
+ */
 const generateObjectId = () => generateObjectId_(Date.now(), 0, 0, objIdCounter++)
 
+/** Array storing area information including name, description, ID, and player count */
 const areaIndex: { name: string, description?: string, id: string, playerCount: number }[] = [];
+/** Map of URL-friendly area names to their corresponding IDs */
 const areaByUrlName = new Map<string, string>()
 const files = Array.from(Deno.readDirSync("./data/area/info"));
 
@@ -48,9 +78,20 @@ for (const file of files) {
 }
 console.log("done")
 
+/**
+ * Searches for areas matching the given search term
+ * @param term - Search term to match against area names
+ * @returns Array of matching area information
+ */
 const searchArea = (term: string) => {
     return areaIndex.filter(a => a.name.includes(term))
 }
+
+/**
+ * Finds an area ID by its URL-friendly name
+ * @param areaUrlName - URL-friendly area name
+ * @returns Area ID if found, undefined otherwise
+ */
 const findAreaByUrlName = (areaUrlName: string) => {
     return areaByUrlName.get(areaUrlName)
 }
@@ -58,7 +99,11 @@ const findAreaByUrlName = (areaUrlName: string) => {
 // Create API router
 const router = new Router();
 
-// Logging middleware
+/**
+ * Logging middleware that logs request information
+ * @param ctx - Request context
+ * @param next - Next middleware function
+ */
 const loggerMiddleware = async (ctx: any, next: () => Promise<void>) => {
     console.info(JSON.stringify({
         ts: new Date().toISOString(),
@@ -78,6 +123,10 @@ const loggerMiddleware = async (ctx: any, next: () => Promise<void>) => {
 
 // Routes
 router
+    /**
+     * Authentication endpoint to start a session
+     * Returns player information and session details
+     */
     .post('/auth/start', async (ctx) => {
         // TODO: Implement cookie handling
         ctx.response.body = {
@@ -106,6 +155,10 @@ router
             customSearchWords: ''
         };
     })
+    /**
+     * Area loading endpoint
+     * Loads area data by ID or URL-friendly name
+     */
     .post('/area/load', async (ctx) => {
         const body = await ctx.request.body().value;
         const { areaId, areaUrlName } = body;
@@ -137,6 +190,10 @@ router
             ctx.response.body = { ok: false, _reasonDenied: "Private", serveTime: 13 };
         }
     })
+    /**
+     * Area search endpoint
+     * Searches areas by term or creator ID
+     */
     .post('/area/search', async (ctx) => {
         const { term, byCreatorId } = await ctx.request.body().value;
 
@@ -165,14 +222,26 @@ app.use(router.allowedMethods());
 // Start the servers
 console.log("Starting servers...");
 
-// Start API server
+/**
+ * Main API server instance
+ * Handles authentication, area loading, and search functionality
+ */
 app.listen({ port: PORT_API });
 console.log(`🦊 API server is running on port ${PORT_API}...`);
 
-// Create and start area bundles server
+/**
+ * Area bundles server instance
+ * Serves area bundle data for game world loading
+ */
 const appAreaBundles = new Application();
 const routerAreaBundles = new Router();
 
+/**
+ * Area bundle retrieval endpoint
+ * @param areaId - Unique identifier for the area
+ * @param areaKey - Key for the specific bundle within the area
+ * @returns JSON bundle data or 404 if not found
+ */
 routerAreaBundles.get('/:areaId/:areaKey', async (ctx) => {
     const { areaId, areaKey } = ctx.params;
     try {
@@ -191,10 +260,18 @@ appAreaBundles.use(routerAreaBundles.allowedMethods());
 appAreaBundles.listen({ port: PORT_CDN_AREABUNDLES });
 console.log(`🦊 AreaBundles server is running on port ${PORT_CDN_AREABUNDLES}...`);
 
-// Create and start thing definitions server
+/**
+ * Thing definitions server instance
+ * Serves object/thing definitions for game assets
+ */
 const appThingDefs = new Application();
 const routerThingDefs = new Router();
 
+/**
+ * Thing definition retrieval endpoint
+ * @param thingId - Unique identifier for the thing/object
+ * @returns JSON thing definition or empty string if not found
+ */
 routerThingDefs.get('/:thingId', async (ctx) => {
     const { thingId } = ctx.params;
     try {
@@ -213,10 +290,19 @@ appThingDefs.use(routerThingDefs.allowedMethods());
 appThingDefs.listen({ port: PORT_CDN_THINGDEFS });
 console.log(`🦊 ThingDefs server is running on port ${PORT_CDN_THINGDEFS}...`);
 
-// Create and start UGC images server
+/**
+ * User-generated content images server instance
+ * Serves user-uploaded images and content
+ */
 const appUgcImages = new Application();
 const routerUgcImages = new Router();
 
+/**
+ * UGC image retrieval endpoint
+ * @param part1 - First part of the image identifier
+ * @param part2 - Second part of the image identifier
+ * @returns PNG image data or 404 HTML if not found
+ */
 routerUgcImages.get('/:part1/:part2', async (ctx) => {
     const { part1, part2 } = ctx.params;
     try {
