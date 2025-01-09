@@ -1,0 +1,23 @@
+{
+  "name": "anyland-archive-redux-xs",
+  "version": "1.0.0",
+  "description": "",
+  "main": "archiver2.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "elysia": "^0.8.6",
+    "nsqjs": "^0.13.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/nsqjs": "^0.12.4",
+    "bun-types": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

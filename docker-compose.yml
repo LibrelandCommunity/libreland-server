@@ -1,0 +1,53 @@
+services:
+  al-gameserver:
+    image: oven/bun:latest
+    container_name: al-gameserver
+    volumes:
+      - ./:/app
+      - /home/zetaphor/Code/anyland-archive/archiver/data:/app/data
+    working_dir: /app
+    command: ["bun", "game-server.ts"]
+    environment:
+      - HOST=0.0.0.0           # Add this to bind to all interfaces
+      - PORT_API=8000
+      - PORT_CDN_THINGDEFS=8001
+      - PORT_CDN_AREABUNDLES=8002
+      - PORT_CDN_UGCIMAGES=8003
+    ports:
+      - "8000:8000"
+      - "8001:8001"
+      - "8002:8002"
+      - "8003:8003"
+    restart: unless-stopped
+    networks:
+      game-network:
+        aliases:
+          - app.anyland.com
+          - d6ccx151yatz6.cloudfront.net
+          - d26e4xubm8adxu.cloudfront.net
+          - steamuserimages-a.akamaihd.net
+
+  caddy:
+    image: caddy:2
+    container_name: caddy
+    ports:
+      - "80:80"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: unless-stopped
+    networks:
+      - game-network
+    depends_on:
+      - al-gameserver
+
+networks:
+  game-network:
+    name: game-network
+
+volumes:
+  caddy_data:
+    name: caddy_data
+  caddy_config:
+    name: caddy_config

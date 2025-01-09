@@ -1,0 +1,27 @@
+{
+    # Disable HTTPS and admin for local development
+    auto_https off
+    admin off
+}
+
+# API Routes - Port 8000
+:80 {
+    handle {
+        reverse_proxy al-gameserver:8000
+    }
+}
+
+# Thing Definitions CDN - Port 8001
+http://d6ccx151yatz6.cloudfront.net {
+    reverse_proxy al-gameserver:8001
+}
+
+# Area Bundles CDN - Port 8002
+http://d26e4xubm8adxu.cloudfront.net {
+    reverse_proxy al-gameserver:8002
+}
+
+# Steam User Images CDN - Port 8003
+http://steamuserimages-a.akamaihd.net {
+    reverse_proxy al-gameserver:8003
+}

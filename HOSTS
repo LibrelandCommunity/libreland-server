@@ -1,0 +1,5 @@
+# Add to /etc/hosts (Linux/Mac) or C:\Windows\System32\drivers\etc\hosts (Windows)
+127.0.0.1  app.anyland.com
+127.0.0.1  d6ccx151yatz6.cloudfront.net
+127.0.0.1  d26e4xubm8adxu.cloudfront.net
+127.0.0.1  steamuserimages-a.akamaihd.net
