@@ -2,7 +2,7 @@
 
 This is an open source game server for the now defunct game [Anyland](https://anyland.com).
 
-### **This server is freely available under the AGPL-3.0 license. This license requires that if you run this server and allow users to access it over any network, you must make the complete source code available to those users - including both the original code and any modifications you make. If you are not comfortable with this, do not use this server or any of the code in this repository.**
+### **This server is freely available under the [AGPL-3.0 license](https://www.gnu.org/licenses/agpl-3.0.en.html). This license requires that if you run this server and allow users to access it over any network, you must make the complete source code available to those users - including both the original code and any modifications you make. If you are not comfortable with this, do not use this server or any of the code in this repository.**
 
 ## About
 
