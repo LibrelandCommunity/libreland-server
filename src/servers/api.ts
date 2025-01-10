@@ -113,6 +113,18 @@ export const createAPIServer = () => {
         .post("/thing", async ({ request }) => {
             console.log("user asked to create a thing")
 
+            // Parse body based on content type
+            let bodyData;
+            const contentType = request.headers.get('content-type');
+            if (contentType?.includes('application/json')) {
+                bodyData = await request.clone().json().catch(() => undefined);
+            } else if (contentType?.includes('application/x-www-form-urlencoded')) {
+                const formData = await request.clone().formData().catch(() => undefined);
+                if (formData) {
+                    bodyData = Object.fromEntries(formData);
+                }
+            }
+
             // Log unimplemented request
             await logUnimplementedRequest({
                 server: "API",
@@ -120,10 +132,10 @@ export const createAPIServer = () => {
                 url: request.url,
                 timestamp: new Date().toISOString(),
                 headers: Object.fromEntries(request.headers.entries()),
-                body: await request.clone().json(),
+                body: bodyData,
                 params: {
                     query: Object.fromEntries(new URL(request.url).searchParams.entries()),
-                    body: await request.clone().json()
+                    body: bodyData
                 }
             })
 
@@ -387,6 +399,20 @@ export const createAPIServer = () => {
             { body: t.Object({ forumName: t.String() }) }
         )
         .all("*", async ({ request }) => {
+            // Parse body based on content type
+            let bodyData;
+            const contentType = request.headers.get('content-type');
+            if (request.method !== 'GET' && request.body) {
+                if (contentType?.includes('application/json')) {
+                    bodyData = await request.clone().json().catch(() => undefined);
+                } else if (contentType?.includes('application/x-www-form-urlencoded')) {
+                    const formData = await request.clone().formData().catch(() => undefined);
+                    if (formData) {
+                        bodyData = Object.fromEntries(formData);
+                    }
+                }
+            }
+
             // Log any unhandled routes
             await logUnimplementedRequest({
                 server: "API",
@@ -394,10 +420,10 @@ export const createAPIServer = () => {
                 url: request.url,
                 timestamp: new Date().toISOString(),
                 headers: Object.fromEntries(request.headers.entries()),
-                body: request.method !== 'GET' ? await request.clone().json().catch(() => undefined) : undefined,
+                body: bodyData,
                 params: {
                     query: Object.fromEntries(new URL(request.url).searchParams.entries()),
-                    body: request.method !== 'GET' ? await request.clone().json().catch(() => undefined) : undefined
+                    body: bodyData
                 }
             })
             return new Response("Not found", { status: 404 })
