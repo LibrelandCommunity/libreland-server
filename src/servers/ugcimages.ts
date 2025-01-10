@@ -94,6 +94,6 @@ export const createUGCImagesServer = () => {
       port: config.PORT_CDN_UGCIMAGES,
     })
 
-  console.log(`🦊 UGC Images server is running on port ${app.server?.port}...`)
+  console.log(`🐷 UGC Images server is running at on port ${app.server?.port}...`)
   return app
 }
