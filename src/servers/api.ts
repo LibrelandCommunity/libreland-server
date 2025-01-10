@@ -54,7 +54,7 @@ export const createAPIServer = () => {
             } catch (e) {
                 const error = e as DatabaseError
                 // Area likely already exists, update it instead
-                if (error.code === 'SQLITE_CONSTRAINT') {
+                if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
                     areaMetadataOps.update({
                         id: areaId,
                         name: areaInfo.name,
