@@ -16,6 +16,11 @@ Currently the server is in a very early stage of development and is not yet read
 
 However the plan is to provide a fully functional server that can be easily self-hosted allowing anyone to run their own singleplayer or multiplayer Anyland server.
 
+## Content Status
+
+* Available Areas: 31,879
+* Available Thing Defs: Still needs to be calculated
+
 ## Development Status
 
 The server has been **significantly** refactored from the original codebase to be more modular and easier to understand.

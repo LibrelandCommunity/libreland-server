@@ -10,6 +10,8 @@
   "license": "ISC",
   "dependencies": {
     "@elysiajs/swagger": "^1.2.0",
+    "@types/better-sqlite3": "^7.6.12",
+    "better-sqlite3": "^11.7.2",
     "elysia": "^1.2.10",
     "nsqjs": "^0.13.0",
     "zod": "^3.22.4"

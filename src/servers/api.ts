@@ -15,17 +15,18 @@ import { generateObjectId } from '../utils/id'
 import _areaListData from '../data/mock/area-list.json'
 import friendsData from '../data/mock/friends.json'
 import forumsData from '../data/mock/forums.json'
+import { areaMetadataOps, AreaMetadata } from '../db'
 
 type PartialAreaList = Omit<AreaList, 'featured'>
 const areaListData = _areaListData as PartialAreaList
 
-export const createAPIServer = () => {
-    // Area management
-    const areaIndex: AreaIndexEntry[] = []
-    const areaByUrlName = new Map<string, string>()
+interface DatabaseError extends Error {
+    code?: string;
+}
 
+export const createAPIServer = () => {
     // Load area data
-    console.log("building area index...")
+    console.log("loading areas into database...")
     const loadAreas = async () => {
         const files = await fs.readdir("./data/area/info")
 
@@ -38,23 +39,55 @@ export const createAPIServer = () => {
             const areaId = path.parse(filename).name
             const areaUrlName = areaInfo.name.replace(/[^-_a-z0-9]/g, "")
 
-            areaByUrlName.set(areaUrlName, areaId)
-            areaIndex.push({
-                name: areaInfo.name,
-                description: areaInfo.description,
-                id: areaId,
-                playerCount: 0,
-            })
+            try {
+                areaMetadataOps.insert({
+                    id: areaId,
+                    name: areaInfo.name,
+                    description: areaInfo.description || "",
+                    urlName: areaUrlName,
+                    creatorId: undefined,
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
+                    isPrivate: false,
+                    playerCount: 0
+                })
+            } catch (e) {
+                const error = e as DatabaseError
+                // Area likely already exists, update it instead
+                if (error.code === 'SQLITE_CONSTRAINT') {
+                    areaMetadataOps.update({
+                        id: areaId,
+                        name: areaInfo.name,
+                        description: areaInfo.description || "",
+                        urlName: areaUrlName,
+                        creatorId: undefined,
+                        updatedAt: Date.now(),
+                        isPrivate: false,
+                        playerCount: 0
+                    })
+                } else {
+                    console.error("Error inserting area:", error)
+                }
+            }
         }
     }
 
     const searchArea = (term: string): AreaIndexEntry[] => {
-        return areaIndex.filter(a => a.name.includes(term))
+        return areaMetadataOps.search(term, 50).map(row => ({
+            id: row.id,
+            name: row.name,
+            description: row.description || '',
+            playerCount: row.playerCount || 0
+        }))
     }
 
     const findAreaByUrlName = (areaUrlName: string): string | undefined => {
-        return areaByUrlName.get(areaUrlName)
+        const result = areaMetadataOps.findByUrlName(areaUrlName)
+        return result?.id
     }
+
+    // Call loadAreas on startup
+    loadAreas().catch(console.error)
 
     // Hold geometry storage
     // TODO: Implement proper storage solution
