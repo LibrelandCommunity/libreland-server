@@ -6,6 +6,7 @@
 import * as path from "node:path"
 import * as fs from "node:fs/promises"
 import { Elysia, t } from 'elysia'
+import { swagger } from '@elysiajs/swagger'
 import { AreaInfoSchema } from "../types/area"
 import { config } from '../config/server'
 import { AreaIndexEntry, AreaList, AreaListArea } from '../types/area'
@@ -60,6 +61,21 @@ export const createAPIServer = () => {
     const holdGeoMap: Record<string, any> = {}
 
     const app = new Elysia()
+        .use(swagger({
+            documentation: {
+                info: {
+                    title: 'Libreland API',
+                    version: '1.0.0',
+                    description: 'API for the Libreland virtual world server'
+                },
+                tags: [
+                    { name: 'auth', description: 'Authentication endpoints' },
+                    { name: 'area', description: 'Area management endpoints' },
+                    { name: 'person', description: 'User management endpoints' },
+                    { name: 'placement', description: 'Placement management endpoints' }
+                ]
+            }
+        }))
         .onRequest(({ request }) => {
             console.info(JSON.stringify({
                 ts: new Date().toISOString(),

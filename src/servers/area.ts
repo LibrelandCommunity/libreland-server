@@ -4,24 +4,25 @@
  */
 
 import * as path from "node:path"
-import { Elysia } from 'elysia'
+import { Elysia, t } from 'elysia'
+import { swagger } from '@elysiajs/swagger'
 import { config } from '../config/server'
 
 export const createAreaBundlesServer = () => {
   const app = new Elysia()
-    .onRequest(({ request }) => {
-      console.info(JSON.stringify({
-        server: "AREABUNDLES",
-        ts: new Date().toISOString(),
-        ip: request.headers.get('X-Real-Ip'),
-        ua: request.headers.get("User-Agent"),
-        method: request.method,
-        url: request.url,
-      }))
-    })
-    .onError(({ code, error }) => {
-      console.info("error in middleware!", code, error.message)
-    })
+    .use(swagger({
+      path: '/swagger',
+      documentation: {
+        info: {
+          title: 'Area Bundles API',
+          version: '1.0.0',
+          description: 'API for serving area data bundles for the game world'
+        },
+        tags: [
+          { name: 'area-bundles', description: 'Area bundle data endpoints' }
+        ]
+      }
+    }))
     .get(
       "/:areaId/:areaKey",
       async ({ params: { areaId, areaKey } }) => {
@@ -37,8 +38,31 @@ export const createAreaBundlesServer = () => {
           }
         }
         return new Response("Area bundle not found", { status: 404 })
+      },
+      {
+        detail: {
+          tags: ['area-bundles'],
+          description: 'Get area bundle data by area ID and key',
+          params: t.Object({
+            areaId: t.String({ description: 'The ID of the area' }),
+            areaKey: t.String({ description: 'The key of the area bundle' })
+          })
+        }
       }
     )
+    .onRequest(({ request }) => {
+      console.info(JSON.stringify({
+        server: "AREABUNDLES",
+        ts: new Date().toISOString(),
+        ip: request.headers.get('X-Real-Ip'),
+        ua: request.headers.get("User-Agent"),
+        method: request.method,
+        url: request.url,
+      }))
+    })
+    .onError(({ code, error }) => {
+      console.info("error in middleware!", code, error.message)
+    })
     .listen({
       hostname: config.HOST,
       port: config.PORT_CDN_AREABUNDLES

@@ -4,24 +4,25 @@
  */
 
 import * as path from "node:path"
-import { Elysia } from 'elysia'
+import { Elysia, t } from 'elysia'
+import { swagger } from '@elysiajs/swagger'
 import { config } from '../config/server'
 
 export const createThingDefsServer = () => {
   const app = new Elysia()
-    .onRequest(({ request }) => {
-      console.info(JSON.stringify({
-        server: "THINGDEFS",
-        ts: new Date().toISOString(),
-        ip: request.headers.get('X-Real-Ip'),
-        ua: request.headers.get("User-Agent"),
-        method: request.method,
-        url: request.url,
-      }))
-    })
-    .onError(({ code, error }) => {
-      console.info("error in middleware!", code, error.message)
-    })
+    .use(swagger({
+      path: '/swagger',
+      documentation: {
+        info: {
+          title: 'Thing Definitions API',
+          version: '1.0.0',
+          description: 'API for serving object/thing definitions used in the game world'
+        },
+        tags: [
+          { name: 'thing-definitions', description: 'Thing definition endpoints' }
+        ]
+      }
+    }))
     .get(
       "/:thingId",
       async ({ params: { thingId } }) => {
@@ -37,8 +38,30 @@ export const createThingDefsServer = () => {
         }
         console.error("client asked for a thingdef not on disk!!", thingId)
         return Response.json("", { status: 200 })
+      },
+      {
+        detail: {
+          tags: ['thing-definitions'],
+          description: 'Get thing definition by ID',
+          params: t.Object({
+            thingId: t.String({ description: 'The ID of the thing/object' })
+          })
+        }
       }
     )
+    .onRequest(({ request }) => {
+      console.info(JSON.stringify({
+        server: "THINGDEFS",
+        ts: new Date().toISOString(),
+        ip: request.headers.get('X-Real-Ip'),
+        ua: request.headers.get("User-Agent"),
+        method: request.method,
+        url: request.url,
+      }))
+    })
+    .onError(({ code, error }) => {
+      console.info("error in middleware!", code, error.message)
+    })
     .listen({
       hostname: config.HOST,
       port: config.PORT_CDN_THINGDEFS,

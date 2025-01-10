@@ -9,7 +9,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "elysia": "^0.8.6",
+    "@elysiajs/swagger": "^1.2.0",
+    "elysia": "^1.2.10",
     "nsqjs": "^0.13.0",
     "zod": "^3.22.4"
   },
