@@ -6,7 +6,7 @@
 import * as path from "node:path"
 import * as fs from "node:fs/promises"
 import { Elysia, t } from 'elysia'
-import { AreaInfoSchema } from "../lib/schemas"
+import { AreaInfoSchema } from "../types/area"
 import { config } from '../config/server'
 import { AreaIndexEntry, AreaList, AreaListArea } from '../types/area'
 import { HoldGeometryRequest } from '../types/geometry'
