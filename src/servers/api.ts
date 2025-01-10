@@ -92,7 +92,7 @@ export const createAPIServer = () => {
         .onTransform(({ request, path, body, params }) => {
             console.log(request.method, path, { body, params })
         })
-        .post('/auth/start', ({ cookie: { s } }) => {
+        .post('/auth/start', ({ cookie: { s } }: { cookie: { s: any } }) => {
             // I'm setting a hardcoded cookie here because this is read-only so I don't care about user sessions,
             // but we can very easily save a player session here. We just need to be given an account token of sorts (or keep the session forever).
             // The client only looks for a `set-cookie` on `s`.
@@ -134,7 +134,7 @@ export const createAPIServer = () => {
         .post("/p", () => ({ "vMaj": 188, "vMinSrv": 1 }))
         .post(
             "/area/load",
-            async ({ body: { areaId, areaUrlName } }) => {
+            async ({ body: { areaId, areaUrlName } }: { body: { areaId: string, areaUrlName: string } }) => {
                 if (areaId) {
                     const file = Bun.file(path.resolve("./data/area/load/", areaId + ".json"))
                     if (await file.exists()) {
@@ -163,7 +163,7 @@ export const createAPIServer = () => {
         )
         .post(
             "/area/info",
-            async ({ body: { areaId } }) => {
+            async ({ body: { areaId } }: { body: { areaId: string } }) => {
                 const file = Bun.file(path.resolve("./data/area/info/", areaId + ".json"))
                 const text = await file.text()
                 return Response.json(JSON.parse(text))
@@ -172,7 +172,7 @@ export const createAPIServer = () => {
         )
         .post(
             "/area/getsubareas",
-            async ({ body: { areaId } }) => {
+            async ({ body: { areaId } }: { body: { areaId: string } }) => {
                 const file = Bun.file(path.resolve("./data/area/subareas/", areaId + ".json"))
                 if (await file.exists()) {
                     const text = await file.text()
@@ -184,7 +184,7 @@ export const createAPIServer = () => {
         )
         .post(
             "/area/lists",
-            ({ body: { subsetsize, setsize } }) => {
+            ({ body: { subsetsize, setsize } }: { body: { subsetsize: string, setsize: string } }) => {
                 // Limit the number of areas returned based on parameters
                 const subset = parseInt(subsetsize) || 30
                 const total = parseInt(setsize) || 300
@@ -200,7 +200,7 @@ export const createAPIServer = () => {
         )
         .post(
             "/area/search",
-            async ({ body: { term, byCreatorId } }) => {
+            async ({ body: { term, byCreatorId } }: { body: { term: string, byCreatorId: string } }) => {
                 if (byCreatorId) {
                     const file = Bun.file(path.resolve("./data/person/areasearch/", byCreatorId + ".json"))
 
@@ -221,7 +221,7 @@ export const createAPIServer = () => {
         )
         .post(
             "/placement/info",
-            async ({ body: { areaId, placementId } }) => {
+            async ({ body: { areaId, placementId } }: { body: { areaId: string, placementId: string } }) => {
                 const file = Bun.file(path.resolve("./data/placement/info/", areaId, placementId + ".json"))
                 const text = await file.text()
                 return Response.json(JSON.parse(text))
@@ -232,7 +232,7 @@ export const createAPIServer = () => {
             () => friendsData
         )
         .post("person/info",
-            async ({ body: { areaId, userId } }) => {
+            async ({ body: { areaId, userId } }: { body: { areaId: string, userId: string } }) => {
                 const file = Bun.file(path.resolve("./data/person/info/", userId + ".json"))
 
                 if (await file.exists()) {
@@ -244,15 +244,14 @@ export const createAPIServer = () => {
             { body: t.Object({ areaId: t.String(), userId: t.String() }) }
         )
         .post("/person/infobasic",
-            async ({ body: { areaId, userId } }) => {
+            async ({ body: { areaId, userId } }: { body: { areaId: string, userId: string } }) => {
                 return { "isEditorHere": false }
             },
             { body: t.Object({ areaId: t.String(), userId: t.String() }) }
         )
         .post("/person/getholdgeometry",
-            async ({ body }) => {
-                const request = body as HoldGeometryRequest
-                return holdGeoMap[request.thingId] || {}
+            async ({ body }: { body: HoldGeometryRequest }) => {
+                return holdGeoMap[body.thingId] || {}
             },
             {
                 body: t.Object({
@@ -262,10 +261,9 @@ export const createAPIServer = () => {
             }
         )
         .post("/person/registerhold",
-            async ({ body }) => {
-                const request = body as HoldGeometryRequest
-                if (request.thingId && request.geometry) {
-                    holdGeoMap[request.thingId] = request.geometry
+            async ({ body }: { body: HoldGeometryRequest }) => {
+                if (body.thingId && body.geometry) {
+                    holdGeoMap[body.thingId] = body.geometry
                 }
                 return { ok: true }
             },
@@ -281,7 +279,7 @@ export const createAPIServer = () => {
                 return { "inventoryItems": null }
             },
         )
-        .post("/thing", async ({ body }) => {
+        .post("/thing", async ({ body }: { body: any }) => {
             console.log("user asked to create a thing", body)
             return new Response("Not implemented", { status: 500 })
         },
@@ -289,7 +287,7 @@ export const createAPIServer = () => {
                 body: t.Unknown()
             })
         .post("/thing/topby",
-            async ({ body: { id } }) => {
+            async ({ body: { id } }: { body: { id: string } }) => {
                 const file = Bun.file(path.resolve("./data/person/topby/", id + ".json"))
 
                 if (await file.exists()) {
@@ -302,14 +300,14 @@ export const createAPIServer = () => {
             { body: t.Object({ id: t.String(), limit: t.String() }) }
         )
         .get("/thing/info/:thingId",
-            async ({ params: { thingId } }) => {
+            async ({ params: { thingId } }: { params: { thingId: string } }) => {
                 const file = Bun.file(path.resolve("./data/thing/info/", thingId + ".json"))
                 const text = await file.text()
                 return Response.json(JSON.parse(text))
             }
         )
         .get("/thing/sl/tdef/:thingId",
-            async ({ params: { thingId } }) => {
+            async ({ params: { thingId } }: { params: { thingId: string } }) => {
                 const file = Bun.file(path.resolve("./data/thing/def/", thingId + ".json"))
                 const text = await file.text()
                 return Response.json(JSON.parse(text))
@@ -317,7 +315,7 @@ export const createAPIServer = () => {
         )
         .post(
             "/thing/gettags",
-            async ({ body: { thingId } }) => {
+            async ({ body: { thingId } }: { body: { thingId: string } }) => {
                 const file = Bun.file(path.resolve("./data/thing/tags/", thingId + ".json"))
                 const text = await file.text()
                 return Response.json(JSON.parse(text))
@@ -331,7 +329,7 @@ export const createAPIServer = () => {
         )
         .post(
             "/gift/getreceived",
-            async ({ body: { userId } }) => {
+            async ({ body: { userId } }: { body: { userId: string } }) => {
                 const file = Bun.file(path.resolve("./data/person/gift/", userId + ".json"))
                 const text = await file.text()
                 return Response.json(JSON.parse(text))
@@ -341,19 +339,19 @@ export const createAPIServer = () => {
         .get("/forum/favorites",
             () => forumsData
         )
-        .get("/forum/forum/:id", async ({ params: { id } }) => {
+        .get("/forum/forum/:id", async ({ params: { id } }: { params: { id: string } }) => {
             const file = Bun.file(path.resolve("./data/forum/forum/", id + ".json"))
             const text = await file.text()
             return Response.json(JSON.parse(text))
         })
-        .get("/forum/thread/:id", async ({ params: { id } }) => {
+        .get("/forum/thread/:id", async ({ params: { id } }: { params: { id: string } }) => {
             const file = Bun.file(path.resolve("./data/forum/thread/", id + ".json"))
             const text = await file.text()
             return Response.json(JSON.parse(text))
         })
         .post(
             "/forum/forumid",
-            ({ body: { forumName } }) => {
+            ({ body: { forumName } }: { body: { forumName: string } }) => {
                 return { ok: true, forumId: "629158392f5bde05e84386d0" } // canned boardtown
             },
             { body: t.Object({ forumName: t.String() }) }

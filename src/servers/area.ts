@@ -25,7 +25,7 @@ export const createAreaBundlesServer = () => {
     }))
     .get(
       "/:areaId/:areaKey",
-      async ({ params: { areaId, areaKey } }) => {
+      async ({ params: { areaId, areaKey } }: { params: { areaId: string, areaKey: string } }) => {
         const file = Bun.file(path.resolve("./data/area/bundle/", areaId, areaKey + ".json"))
 
         if (await file.exists()) {
@@ -61,7 +61,7 @@ export const createAreaBundlesServer = () => {
       }))
     })
     .onError(({ code, error }) => {
-      console.info("error in middleware!", code, error.message)
+      console.info("error in middleware!", code, error?.toString())
     })
     .listen({
       hostname: config.HOST,

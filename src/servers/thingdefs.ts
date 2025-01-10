@@ -25,7 +25,7 @@ export const createThingDefsServer = () => {
     }))
     .get(
       "/:thingId",
-      async ({ params: { thingId } }) => {
+      async ({ params: { thingId } }: { params: { thingId: string } }) => {
         const file = Bun.file(path.resolve("./data/thing/def/", thingId + ".json"))
         if (await file.exists()) {
           try {
@@ -60,7 +60,7 @@ export const createThingDefsServer = () => {
       }))
     })
     .onError(({ code, error }) => {
-      console.info("error in middleware!", code, error.message)
+      console.info("error in middleware!", code, error && 'message' in error ? error.message : String(error))
     })
     .listen({
       hostname: config.HOST,

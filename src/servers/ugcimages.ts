@@ -27,7 +27,7 @@ export const createUGCImagesServer = () => {
     }))
     .get(
       "/ugc/:part1/:part2/",
-      async ({ params: { part1, part2 } }) => {
+      async ({ params: { part1, part2 } }: { params: { part1: string, part2: string } }) => {
         const filename = path.join("../archiver/images/", `${part1}_${part2}.png`)
         const file = Bun.file(filename)
 
@@ -64,7 +64,7 @@ export const createUGCImagesServer = () => {
       }))
     })
     .onError(({ code, error }) => {
-      console.info("error in middleware!", code, error.message)
+      console.info("error in middleware!", code, error && 'message' in error ? error.message : String(error))
     })
     .listen({
       hostname: config.HOST,

@@ -16,7 +16,7 @@
   },
   "devDependencies": {
     "@types/nsqjs": "^0.12.4",
-    "bun-types": "latest"
+    "bun-types": "^1.1.43"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
