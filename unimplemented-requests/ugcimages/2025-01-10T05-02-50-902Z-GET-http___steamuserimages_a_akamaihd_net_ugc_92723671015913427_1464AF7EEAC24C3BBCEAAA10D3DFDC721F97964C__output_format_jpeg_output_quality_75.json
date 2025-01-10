@@ -1,0 +1,20 @@
+{
+  "server": "UGCIMAGES",
+  "method": "GET",
+  "url": "http://steamuserimages-a.akamaihd.net/ugc/92723671015913427/1464AF7EEAC24C3BBCEAAA10D3DFDC721F97964C/?output-format=jpeg&output-quality=75",
+  "timestamp": "2025-01-10T05:02:50.902Z",
+  "headers": {
+    "accept": "*/*",
+    "accept-encoding": "identity",
+    "host": "steamuserimages-a.akamaihd.net",
+    "user-agent": "UnityPlayer/2018.1.0f2 (UnityWebRequest/1.0, libcurl/7.51.0-DEV)",
+    "x-forwarded-for": "127.0.0.1",
+    "x-forwarded-host": "steamuserimages-a.akamaihd.net",
+    "x-forwarded-proto": "http",
+    "x-unity-version": "2018.1.0f2"
+  },
+  "params": {
+    "part1": "92723671015913427",
+    "part2": "1464AF7EEAC24C3BBCEAAA10D3DFDC721F97964C"
+  }
+}
