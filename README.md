@@ -1,4 +1,4 @@
-# LibreLand Game Server
+# Libreland Game Server
 
 This is an open source game server for the now defunct game [Anyland](https://anyland.com).
 
