@@ -7,6 +7,7 @@ import * as path from "node:path"
 import { Elysia, t } from 'elysia'
 import { swagger } from '@elysiajs/swagger'
 import { config } from '../config/server'
+import { logUnimplementedRequest } from '../utils/request-logger'
 
 const NOT_FOUND_HTML = "<html><head><title>404 Not Found</title></head><body><h1>Not Found</h1></body></html>"
 
@@ -27,7 +28,7 @@ export const createUGCImagesServer = () => {
     }))
     .get(
       "/ugc/:part1/:part2/",
-      async ({ params: { part1, part2 } }: { params: { part1: string, part2: string } }) => {
+      async ({ params: { part1, part2 }, request }: { params: { part1: string, part2: string }, request: Request }) => {
         const filename = path.join("../archiver/images/", `${part1}_${part2}.png`)
         const file = Bun.file(filename)
 
@@ -40,6 +41,17 @@ export const createUGCImagesServer = () => {
           }
         }
         console.error("client asked for an ugc image not on disk!!", part1, part2, filename)
+
+        // Log unimplemented request
+        await logUnimplementedRequest({
+          server: "UGCIMAGES",
+          method: request.method,
+          url: request.url,
+          timestamp: new Date().toISOString(),
+          headers: Object.fromEntries(request.headers.entries()),
+          params: { part1, part2 }
+        })
+
         return new Response(NOT_FOUND_HTML, { status: 404 })
       },
       {
@@ -53,6 +65,17 @@ export const createUGCImagesServer = () => {
         }
       }
     )
+    .all("*", async ({ request }) => {
+      // Log any unhandled routes
+      await logUnimplementedRequest({
+        server: "UGCIMAGES",
+        method: request.method,
+        url: request.url,
+        timestamp: new Date().toISOString(),
+        headers: Object.fromEntries(request.headers.entries())
+      })
+      return new Response(NOT_FOUND_HTML, { status: 404 })
+    })
     .onRequest(({ request }) => {
       console.info(JSON.stringify({
         server: "UGCIMAGES",

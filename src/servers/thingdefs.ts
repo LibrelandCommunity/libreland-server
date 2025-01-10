@@ -7,6 +7,7 @@ import * as path from "node:path"
 import { Elysia, t } from 'elysia'
 import { swagger } from '@elysiajs/swagger'
 import { config } from '../config/server'
+import { logUnimplementedRequest } from '../utils/request-logger'
 
 export const createThingDefsServer = () => {
   const app = new Elysia()
@@ -25,7 +26,7 @@ export const createThingDefsServer = () => {
     }))
     .get(
       "/:thingId",
-      async ({ params: { thingId } }: { params: { thingId: string } }) => {
+      async ({ params: { thingId }, request }: { params: { thingId: string }, request: Request }) => {
         const file = Bun.file(path.resolve("./data/thing/def/", thingId + ".json"))
         if (await file.exists()) {
           try {
@@ -37,6 +38,17 @@ export const createThingDefsServer = () => {
           }
         }
         console.error("client asked for a thingdef not on disk!!", thingId)
+
+        // Log unimplemented request
+        await logUnimplementedRequest({
+          server: "THINGDEFS",
+          method: request.method,
+          url: request.url,
+          timestamp: new Date().toISOString(),
+          headers: Object.fromEntries(request.headers.entries()),
+          params: { thingId }
+        })
+
         return Response.json("", { status: 200 })
       },
       {
@@ -49,6 +61,17 @@ export const createThingDefsServer = () => {
         }
       }
     )
+    .all("*", async ({ request }) => {
+      // Log any unhandled routes
+      await logUnimplementedRequest({
+        server: "THINGDEFS",
+        method: request.method,
+        url: request.url,
+        timestamp: new Date().toISOString(),
+        headers: Object.fromEntries(request.headers.entries())
+      })
+      return Response.json("", { status: 404 })
+    })
     .onRequest(({ request }) => {
       console.info(JSON.stringify({
         server: "THINGDEFS",

@@ -12,6 +12,7 @@ import { config } from '../config/server'
 import { AreaIndexEntry, AreaList, AreaListArea } from '../types/area'
 import { HoldGeometryRequest } from '../types/geometry'
 import { generateObjectId } from '../utils/id'
+import { logUnimplementedRequest } from '../utils/request-logger'
 import _areaListData from '../data/mock/area-list.json'
 import friendsData from '../data/mock/friends.json'
 import forumsData from '../data/mock/forums.json'
@@ -109,21 +110,20 @@ export const createAPIServer = () => {
                 ]
             }
         }))
-        .onRequest(({ request }) => {
-            console.info(JSON.stringify({
-                ts: new Date().toISOString(),
-                ip: request.headers.get('X-Real-Ip'),
-                ua: request.headers.get("User-Agent"),
+        .post("/thing", async ({ request }) => {
+            console.log("user asked to create a thing")
+
+            // Log unimplemented request
+            await logUnimplementedRequest({
+                server: "API",
                 method: request.method,
                 url: request.url,
-            }))
-        })
-        .onError(({ code, error, request }) => {
-            console.info("error in middleware!", request.url, code)
-            console.log(error)
-        })
-        .onTransform(({ request, path, body, params }) => {
-            console.log(request.method, path, { body, params })
+                timestamp: new Date().toISOString(),
+                headers: Object.fromEntries(request.headers.entries()),
+                body: await request.clone().json()
+            })
+
+            return new Response("Not implemented", { status: 500 })
         })
         .post('/auth/start', ({ cookie: { s } }: { cookie: { s: any } }) => {
             // I'm setting a hardcoded cookie here because this is read-only so I don't care about user sessions,
@@ -312,13 +312,6 @@ export const createAPIServer = () => {
                 return { "inventoryItems": null }
             },
         )
-        .post("/thing", async ({ body }: { body: any }) => {
-            console.log("user asked to create a thing", body)
-            return new Response("Not implemented", { status: 500 })
-        },
-            {
-                body: t.Unknown()
-            })
         .post("/thing/topby",
             async ({ body: { id } }: { body: { id: string } }) => {
                 const file = Bun.file(path.resolve("./data/person/topby/", id + ".json"))
@@ -389,6 +382,31 @@ export const createAPIServer = () => {
             },
             { body: t.Object({ forumName: t.String() }) }
         )
+        .all("*", async ({ request }) => {
+            // Log any unhandled routes
+            await logUnimplementedRequest({
+                server: "API",
+                method: request.method,
+                url: request.url,
+                timestamp: new Date().toISOString(),
+                headers: Object.fromEntries(request.headers.entries()),
+                body: request.method !== 'GET' ? await request.clone().json().catch(() => undefined) : undefined
+            })
+            return new Response("Not found", { status: 404 })
+        })
+        .onRequest(({ request }) => {
+            console.info(JSON.stringify({
+                ts: new Date().toISOString(),
+                ip: request.headers.get('X-Real-Ip'),
+                ua: request.headers.get("User-Agent"),
+                method: request.method,
+                url: request.url,
+            }))
+        })
+        .onError(({ code, error, request }) => {
+            console.info("error in middleware!", request.url, code)
+            console.log(error)
+        })
         .listen({
             hostname: config.HOST,
             port: config.PORT_API,

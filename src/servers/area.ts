@@ -7,6 +7,7 @@ import * as path from "node:path"
 import { Elysia, t } from 'elysia'
 import { swagger } from '@elysiajs/swagger'
 import { config } from '../config/server'
+import { logUnimplementedRequest } from '../utils/request-logger'
 
 export const createAreaBundlesServer = () => {
   const app = new Elysia()
@@ -25,7 +26,7 @@ export const createAreaBundlesServer = () => {
     }))
     .get(
       "/:areaId/:areaKey",
-      async ({ params: { areaId, areaKey } }: { params: { areaId: string, areaKey: string } }) => {
+      async ({ params: { areaId, areaKey }, request }: { params: { areaId: string, areaKey: string }, request: Request }) => {
         const file = Bun.file(path.resolve("./data/area/bundle/", areaId, areaKey + ".json"))
 
         if (await file.exists()) {
@@ -37,6 +38,17 @@ export const createAreaBundlesServer = () => {
             return new Response("Error reading area bundle", { status: 500 })
           }
         }
+
+        // Log unimplemented request
+        await logUnimplementedRequest({
+          server: "AREABUNDLES",
+          method: request.method,
+          url: request.url,
+          timestamp: new Date().toISOString(),
+          headers: Object.fromEntries(request.headers.entries()),
+          params: { areaId, areaKey }
+        })
+
         return new Response("Area bundle not found", { status: 404 })
       },
       {
@@ -50,6 +62,17 @@ export const createAreaBundlesServer = () => {
         }
       }
     )
+    .all("*", async ({ request }) => {
+      // Log any unhandled routes
+      await logUnimplementedRequest({
+        server: "AREABUNDLES",
+        method: request.method,
+        url: request.url,
+        timestamp: new Date().toISOString(),
+        headers: Object.fromEntries(request.headers.entries())
+      })
+      return new Response("Not found", { status: 404 })
+    })
     .onRequest(({ request }) => {
       console.info(JSON.stringify({
         server: "AREABUNDLES",
