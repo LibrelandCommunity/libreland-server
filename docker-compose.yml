@@ -4,9 +4,8 @@ services:
     container_name: al-gameserver
     volumes:
       - ./:/app
-      - /home/zetaphor/Code/anyland-archive/archiver/data:/app/data
     working_dir: /app
-    command: ["bun", "game-server.ts"]
+    command: ["bun", "bun-server.ts"]
     environment:
       - HOST=0.0.0.0           # Add this to bind to all interfaces
       - PORT_API=8000
