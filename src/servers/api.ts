@@ -8,12 +8,15 @@ import * as fs from "node:fs/promises"
 import { Elysia, t } from 'elysia'
 import { AreaInfoSchema } from "../lib/schemas"
 import { config } from '../config/server'
-import { AreaIndexEntry } from '../types/area'
+import { AreaIndexEntry, AreaList, AreaListArea } from '../types/area'
 import { HoldGeometryRequest } from '../types/geometry'
 import { generateObjectId } from '../utils/id'
-import areaListData from '../data/mock/area-list.json'
+import _areaListData from '../data/mock/area-list.json'
 import friendsData from '../data/mock/friends.json'
 import forumsData from '../data/mock/forums.json'
+
+type PartialAreaList = Omit<AreaList, 'featured'>
+const areaListData = _areaListData as PartialAreaList
 
 export const createAPIServer = () => {
     // Area management
@@ -173,7 +176,6 @@ export const createAPIServer = () => {
                 const limitedData = {
                     ...areaListData,
                     visited: areaListData.visited?.slice(0, subset) || [],
-                    featured: areaListData.featured?.slice(0, subset) || [],
                     popular: areaListData.popular?.slice(0, total) || []
                 }
                 return limitedData
