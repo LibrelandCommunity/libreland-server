@@ -2,3 +2,5 @@ data/
 node_modules/
 api-docs/
 src/archiver
+unimplemented-requests/
+!unimplemented-requests/.gitkeep

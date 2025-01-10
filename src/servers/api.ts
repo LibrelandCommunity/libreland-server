@@ -120,7 +120,11 @@ export const createAPIServer = () => {
                 url: request.url,
                 timestamp: new Date().toISOString(),
                 headers: Object.fromEntries(request.headers.entries()),
-                body: await request.clone().json()
+                body: await request.clone().json(),
+                params: {
+                    query: Object.fromEntries(new URL(request.url).searchParams.entries()),
+                    body: await request.clone().json()
+                }
             })
 
             return new Response("Not implemented", { status: 500 })
@@ -390,7 +394,11 @@ export const createAPIServer = () => {
                 url: request.url,
                 timestamp: new Date().toISOString(),
                 headers: Object.fromEntries(request.headers.entries()),
-                body: request.method !== 'GET' ? await request.clone().json().catch(() => undefined) : undefined
+                body: request.method !== 'GET' ? await request.clone().json().catch(() => undefined) : undefined,
+                params: {
+                    query: Object.fromEntries(new URL(request.url).searchParams.entries()),
+                    body: request.method !== 'GET' ? await request.clone().json().catch(() => undefined) : undefined
+                }
             })
             return new Response("Not found", { status: 404 })
         })
