@@ -90,6 +90,6 @@ export const createThingDefsServer = () => {
       port: config.PORT_CDN_THINGDEFS,
     })
 
-  console.log(`🐹 ThingDefs server is running at on port ${app.server?.port}...`)
+  console.log(`🐹 ThingDefs: http://${app.server?.hostname}:${app.server?.port}/swagger`)
   return app
 }

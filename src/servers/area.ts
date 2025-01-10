@@ -91,6 +91,6 @@ export const createAreaBundlesServer = () => {
       port: config.PORT_CDN_AREABUNDLES
     })
 
-  console.log(`🐸 AreaBundles server is running at on port ${app.server?.port}...`)
+  console.log(`🐸 AreaBundles: http://${app.server?.hostname}:${app.server?.port}/swagger`)
   return app
 }

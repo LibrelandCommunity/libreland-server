@@ -27,7 +27,7 @@ interface DatabaseError extends Error {
 
 export const createAPIServer = () => {
     // Load area data
-    console.log("loading areas into database...")
+    console.log("Loading areas into database...")
     const loadAreas = async () => {
         const files = await fs.readdir("./data/area/info")
 
@@ -420,6 +420,6 @@ export const createAPIServer = () => {
             port: config.PORT_API,
         })
 
-    console.log(`🦊 API server is running at on port ${app.server?.port}...`)
+    console.log(`🦊 API server: http://${app.server?.hostname}:${app.server?.port}/swagger`)
     return app
 }
