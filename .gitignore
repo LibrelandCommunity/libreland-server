@@ -4,3 +4,4 @@ api-docs/
 src/archiver
 unimplemented-requests/
 !unimplemented-requests/.gitkeep
+*.dxvk-cache
