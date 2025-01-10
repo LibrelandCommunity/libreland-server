@@ -32,6 +32,8 @@ There are Swagger docs available at `/swagger` on for each server:
 * [Thing Defs Server - http://localhost:8002/swagger](http://localhost:8002/swagger)
 * [UGC Images Server - http://localhost:8003/swagger](http://localhost:8003/swagger)
 
+Generated documentation on the various data types and relationships can be found in the [docs](./docs) directory.
+
 ## Development
 
 To run the server, you need to have Bun and Caddy installed.
