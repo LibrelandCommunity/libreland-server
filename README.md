@@ -79,3 +79,9 @@ docker compose up
 ```
 
 This will start the reverse proxy server and the API servers.
+
+
+## TODO
+
+* Add documentation for using the [Goldberg Emulator](https://mr_goldberg.gitlab.io/goldberg_emulator/)
+* Start documenting PUN endpoints, look into forcing websocket mode and running captures
