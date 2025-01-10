@@ -66,12 +66,8 @@ const findAreaByUrlName = (areaUrlName: string) => {
     return areaByUrlName.get(areaUrlName)
 }
 
-
-
 // TODO store this properly using the player's ID, handSide etc
 const holdGeoMap = {}
-
-
 
 const app = new Elysia()
     .onRequest(({ request }) => {
