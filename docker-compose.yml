@@ -5,7 +5,7 @@ services:
     volumes:
       - ./:/app
     working_dir: /app
-    command: ["bun", "bun-server.ts"]
+    command: ["bun", "server.ts"]
     environment:
       - HOST=0.0.0.0           # Add this to bind to all interfaces
       - PORT_API=8000

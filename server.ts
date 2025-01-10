@@ -16,10 +16,6 @@ const PORT_CDN_THINGDEFS = process.env.PORT_CDN_THINGDEFS
 const PORT_CDN_AREABUNDLES = process.env.PORT_CDN_AREABUNDLES
 const PORT_CDN_UGCIMAGES = process.env.PORT_CDN_UGCIMAGES
 
-
-
-
-
 const generateObjectId_ = (timestamp: number, machineId: number, processId: number, counter: number) => {
     const hexTimestamp = Math.floor(timestamp / 1000).toString(16).padStart(8, '0');
     const hexMachineId = machineId.toString(16).padStart(6, '0');
@@ -34,20 +30,20 @@ let objIdCounter = 0;
 const generateObjectId = () => generateObjectId_(Date.now(), 0, 0, objIdCounter++)
 
 
-const areaIndex: {name: string, description?: string, id: string, playerCount: number }[] = [];
+const areaIndex: { name: string, description?: string, id: string, playerCount: number }[] = [];
 const areaByUrlName = new Map<string, string>()
 const files = await fs.readdir("./data/area/info");
 
 console.log("building area index...")
 for (let i = 0; i <= files.length; i++) {
-const filename = files[i];
-if (filename === undefined) {
-// console.log("break");
-break; // Sortir de la boucle si filename est undefined
-}
-const file = Bun.file(path.join("./data/area/info", filename))
+    const filename = files[i];
+    if (filename === undefined) {
+        // console.log("break");
+        break; // Sortir de la boucle si filename est undefined
+    }
+    const file = Bun.file(path.join("./data/area/info", filename))
 
-if (!await file.exists()) continue;
+    if (!await file.exists()) continue;
 
     const areaInfo = await file.json().then(AreaInfoSchema.parseAsync)
     const areaId = path.parse(filename).name
@@ -87,11 +83,11 @@ const app = new Elysia()
             url: request.url,
         }));
     })
-    .onError(({ code, error, request}) => {
+    .onError(({ code, error, request }) => {
         console.info("error in middleware!", request.url, code);
         console.log(error);
     })
-    .onTransform(( { request, path, body, params }) => {
+    .onTransform(({ request, path, body, params }) => {
         console.log(request.method, path, { body, params })
     })
     .post('/auth/start', ({ cookie: { s } }) => {
@@ -106,7 +102,7 @@ const app = new Elysia()
         return {
             vMaj: 188,
             vMinSrv: 1,
-            personId:   playerId,
+            personId: playerId,
             homeAreaId: '5773cf9fbdee942c18292f08', // sunbeach
             screenName: 'singleplayer explorer',
             statusText: 'exploring around (my id: ' + playerId + ')',
@@ -133,7 +129,7 @@ const app = new Elysia()
             customSearchWords: ''
         }
     })
-    .post( "/p", () => ({ "vMaj": 188, "vMinSrv": 1 }) )
+    .post("/p", () => ({ "vMaj": 188, "vMinSrv": 1 }))
     .post(
         "/area/load",
         async ({ body: { areaId, areaUrlName } }) => {
@@ -168,12 +164,12 @@ const app = new Elysia()
     )
     .post(
         "/area/info",
-        ({body: { areaId }}) => Bun.file(path.resolve("./data/area/info/", areaId + ".json")).json(),
+        ({ body: { areaId } }) => Bun.file(path.resolve("./data/area/info/", areaId + ".json")).json(),
         { body: t.Object({ areaId: t.String() }) }
     )
     .post(
         "/area/getsubareas",
-        async ({body: { areaId }}) => {
+        async ({ body: { areaId } }) => {
             const file = Bun.file(path.resolve("./data/area/subareas/", areaId + ".json"))
             if (await file.exists()) {
                 return await file.json()
@@ -186,13 +182,13 @@ const app = new Elysia()
     )
     .post(
         "/area/lists",
-        ({}) => {
+        ({ }) => {
             return canned_areaList;
         }
     )
     .post(
         "/area/search",
-        async ({body: { term, byCreatorId }}) => {
+        async ({ body: { term, byCreatorId } }) => {
             if (byCreatorId) {
                 const file = Bun.file(path.resolve("./data/person/areasearch/", byCreatorId + ".json"))
 
@@ -217,7 +213,7 @@ const app = new Elysia()
     )
     .post(
         "/placement/info",
-        ({body: { areaId, placementId }}) => Bun.file(path.resolve("./data/placement/info/", areaId, placementId + ".json")).json(),
+        ({ body: { areaId, placementId } }) => Bun.file(path.resolve("./data/placement/info/", areaId, placementId + ".json")).json(),
         { body: t.Object({ areaId: t.String(), placementId: t.String() }) }
     )
     .get("person/friendsbystr",
@@ -238,25 +234,25 @@ const app = new Elysia()
     )
     .post("/person/infobasic",
         async ({ body: { areaId, userId } }) => {
-            return { "isEditorHere": false}
+            return { "isEditorHere": false }
         },
         { body: t.Object({ areaId: t.String(), userId: t.String() }) }
     )
     .post("/person/getholdgeometry", async ({ body }) => {
-	    console.log(body, holdGeoMap)
-	    return holdGeoMap[body.thingId] || {}
+        console.log(body, holdGeoMap)
+        return holdGeoMap[body.thingId] || {}
     },
-    {
-        body: t.Unknown()
-    })
+        {
+            body: t.Unknown()
+        })
     .post("/person/registerhold", async ({ body }) => {
-	    console.log(body)
-	    holdGeoMap[body.thingId] = body.geometry
+        console.log(body)
+        holdGeoMap[body.thingId] = body.geometry
         return { ok: true }
     },
-    {
-        body: t.Unknown()
-    })
+        {
+            body: t.Unknown()
+        })
     .get("/inventory/:page",
         () => {
             return { "inventoryItems": null }
@@ -266,9 +262,9 @@ const app = new Elysia()
         console.log("user asked to create a thing", body)
         return new Response("Not implemented", { status: 500 })
     },
-    {
-        body: t.Unknown()
-    })
+        {
+            body: t.Unknown()
+        })
     .post("/thing/topby",
         async ({ body: { id } }) => {
             const file = Bun.file(path.resolve("./data/person/topby/", id + ".json"))
@@ -284,24 +280,24 @@ const app = new Elysia()
         { body: t.Object({ id: t.String(), limit: t.String() }) }
     )
     .get("/thing/info/:thingId",
-        ({params: { thingId }}) => Bun.file(path.resolve("./data/thing/info/", thingId + ".json")).json(),
+        ({ params: { thingId } }) => Bun.file(path.resolve("./data/thing/info/", thingId + ".json")).json(),
     )
     .get("/thing/sl/tdef/:thingId",
-        ({params: { thingId }}) => Bun.file(path.resolve("./data/thing/def/", thingId + ".json")).json(),
+        ({ params: { thingId } }) => Bun.file(path.resolve("./data/thing/def/", thingId + ".json")).json(),
     )
     .post(
         "/thing/gettags",
-        ({body: { thingId }}) => Bun.file(path.resolve("./data/thing/tags/", thingId + ".json")).json(),
+        ({ body: { thingId } }) => Bun.file(path.resolve("./data/thing/tags/", thingId + ".json")).json(),
         { body: t.Object({ thingId: t.String() }) }
     )
     .post(
         "/thing/getflag",
-        ({}) => ({ isFlagged: false }),
+        ({ }) => ({ isFlagged: false }),
         { body: t.Object({ id: t.String() }) }
     )
     .post(
         "/gift/getreceived",
-        ({body: { userId }}) => Bun.file(path.resolve("./data/person/gift/", userId + ".json")),
+        ({ body: { userId } }) => Bun.file(path.resolve("./data/person/gift/", userId + ".json")),
         { body: t.Object({ userId: t.String() }) }
     )
     .get("/forum/favorites",
@@ -309,16 +305,16 @@ const app = new Elysia()
             return canned_forums_favorites
         }
     )
-    .get("/forum/forum/:id", ({params: { id }}) => Bun.file(path.resolve("./data/forum/forum/", id + ".json")).json() )
-    .get("/forum/thread/:id", ({params: { id }}) => Bun.file(path.resolve("./data/forum/thread/", id + ".json")).json() )
+    .get("/forum/forum/:id", ({ params: { id } }) => Bun.file(path.resolve("./data/forum/forum/", id + ".json")).json())
+    .get("/forum/thread/:id", ({ params: { id } }) => Bun.file(path.resolve("./data/forum/thread/", id + ".json")).json())
     .post(
         "/forum/forumid",
-        ({body: { forumName }}) => {
-		return { ok: true, forumId: "629158392f5bde05e84386d0" } // canned boardtown
-	},
+        ({ body: { forumName } }) => {
+            return { ok: true, forumId: "629158392f5bde05e84386d0" } // canned boardtown
+        },
         { body: t.Object({ forumName: t.String() }) }
     )
-	.listen({
+    .listen({
         hostname: HOST,
         port: PORT_API,
     })
@@ -359,11 +355,11 @@ const app_areaBundles = new Elysia()
             }
         },
     )
-	.listen({
+    .listen({
         hostname: HOST,
         port: PORT_CDN_AREABUNDLES
     })
-;
+    ;
 console.log(`🦊 AreaBundles server is running at on port ${app_areaBundles.server?.port}...`)
 
 
@@ -391,7 +387,7 @@ const app_thingDefs = new Elysia()
 
                 }
                 catch (e) {
-                console.error("unable to read thingdef json?", thingId, e)
+                    console.error("unable to read thingdef json?", thingId, e)
                     return Response.json("", { status: 200 })
                 }
             }
@@ -403,11 +399,11 @@ const app_thingDefs = new Elysia()
 
         }
     )
-	.listen({
+    .listen({
         hostname: HOST,
         port: PORT_CDN_THINGDEFS,
     })
-;
+    ;
 console.log(`🦊 ThingDefs server is running at on port ${app_thingDefs.server?.port}...`)
 
 
@@ -429,7 +425,7 @@ const app_ugcImages = new Elysia()
     .get(
         "/ugc/:part1/:part2/",
         async ({ params: { part1, part2 } }) => {
-		const filename = path.join("../archiver/images/", `${part1}_${part2}.png`)
+            const filename = path.join("../archiver/images/", `${part1}_${part2}.png`)
             const file = Bun.file(filename);
 
             if (await file.exists()) {
@@ -437,7 +433,7 @@ const app_ugcImages = new Elysia()
                     return file;
                 }
                 catch (e) {
-			console.log("error reading file")
+                    console.log("error reading file")
                     return new Response("<html><head><title>404 Not Found</title></head><body><h1>Not Found</h1></body></html>", { status: 404 })
                 }
             }
@@ -448,11 +444,11 @@ const app_ugcImages = new Elysia()
 
         }
     )
-	.listen({
+    .listen({
         hostname: HOST,
         port: PORT_CDN_UGCIMAGES,
     })
-;
+    ;
 console.log(`🦊 ugcImages server is running at on port ${app_ugcImages.server?.port}...`)
 
 
@@ -487,7 +483,7 @@ const canned_areaList = {
         { "id": "58a1ecd55c0ebbd513686d5a", "name": "hyrule adventure map", "description": "welcome to hyrule an adventure of fun and monster slaying", "playerCount": 0 },
         { "id": "57b1a5403a204055538212e3", "name": "central cinema", "description": "watch movies on a cinema screen, relax and chill", "playerCount": 0 }
     ],
-    "created": [ ],
+    "created": [],
     "totalOnline": 0,
     "totalAreas": 44182,
     "totalPublicAreas": 32948,
