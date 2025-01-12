@@ -2,6 +2,6 @@ data/
 node_modules/
 api-docs/
 src/archiver
-!unimplemented-requests/.gitkeep
 unimplemented-requests/*
+!unimplemented-requests/.gitkeep
 *.dxvk-cache
