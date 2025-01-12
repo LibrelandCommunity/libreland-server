@@ -1,7 +1,7 @@
 import { Database } from 'bun:sqlite';
 import * as path from 'node:path';
 import { initializeAreaTables, createAreaOperations, AreaMetadata, AreaMetadataOperations } from './area';
-import { initializeUserTables, createUserOperations, UserMetadata, UserMetadataOperations } from './user';
+import { initializeUserTables, createUserOperations, UserMetadataOperations } from './user';
 
 // Initialize database with optimized settings
 const db = new Database(path.join(process.cwd(), 'data', 'libreland.db'));
@@ -26,7 +26,7 @@ export const userMetadataOps = createUserOperations(db);
 
 // Re-export types
 export type { AreaMetadata, AreaMetadataOperations };
-export type { UserMetadata, UserMetadataOperations };
+export type { UserMetadataOperations };
 
 // Export database instance for other operations
 export const getDb = () => db;

@@ -1,35 +1,12 @@
 import { Database } from 'bun:sqlite';
 import { generateObjectId } from '../utils/id';
-
-export interface UserMetadata {
-  id: string;
-  username: string;
-  password_hash: string;
-  created_at?: number;
-  updated_at?: number;
-  is_findable: boolean;
-  age: number;
-  age_secs: number;
-  is_soft_banned: boolean;
-  show_flag_warning: boolean;
-  area_count: number;
-  thing_tag_count: number;
-  all_things_clonable: boolean;
-  has_edit_tools: boolean;
-  has_edit_tools_permanently: boolean;
-  edit_tools_expiry_date: string;
-  is_in_edit_tools_trial: boolean;
-  was_edit_tools_trial_activated: boolean;
-  custom_search_words: string;
-  attachments: string;
-  achievements: number[];
-}
+import { User, CreateUser, UserSchema } from '../types/user';
 
 export interface UserMetadataOperations {
-  insert: (params: Omit<UserMetadata, 'id' | 'password_hash'> & { password: string }) => Promise<UserMetadata>;
-  findByUsername: (username: string) => UserMetadata | undefined;
-  findById: (id: string) => UserMetadata | undefined;
-  validatePassword: (username: string, password: string) => Promise<UserMetadata | undefined>;
+  insert: (params: CreateUser) => Promise<User>;
+  findByUsername: (username: string) => User | undefined;
+  findById: (id: string) => User | undefined;
+  validatePassword: (username: string, password: string) => Promise<User | undefined>;
 }
 
 export function initializeUserTables(db: Database) {
@@ -104,7 +81,7 @@ export function createUserOperations(db: Database): UserMetadataOperations {
         JSON.stringify(params.achievements)
       );
 
-      return {
+      const user = {
         id,
         username: params.username,
         password_hash,
@@ -127,29 +104,33 @@ export function createUserOperations(db: Database): UserMetadataOperations {
         attachments: params.attachments,
         achievements: params.achievements
       };
+
+      return UserSchema.parse(user);
     },
 
     findByUsername: (username) => {
       const stmt = db.prepare('SELECT *, json(achievements) as achievements FROM user_metadata WHERE username = ?');
-      const user = stmt.get(username) as UserMetadata | undefined;
+      const user = stmt.get(username) as User | undefined;
       if (user) {
         user.achievements = JSON.parse(user.achievements as unknown as string);
+        return UserSchema.parse(user);
       }
-      return user;
+      return undefined;
     },
 
     findById: (id) => {
       const stmt = db.prepare('SELECT *, json(achievements) as achievements FROM user_metadata WHERE id = ?');
-      const user = stmt.get(id) as UserMetadata | undefined;
+      const user = stmt.get(id) as User | undefined;
       if (user) {
         user.achievements = JSON.parse(user.achievements as unknown as string);
+        return UserSchema.parse(user);
       }
-      return user;
+      return undefined;
     },
 
     validatePassword: async (username, password) => {
       const stmt = db.prepare('SELECT *, json(achievements) as achievements FROM user_metadata WHERE username = ?');
-      const user = stmt.get(username) as UserMetadata | undefined;
+      const user = stmt.get(username) as User | undefined;
       if (!user) return undefined;
 
       if (user) {
@@ -157,7 +138,10 @@ export function createUserOperations(db: Database): UserMetadataOperations {
       }
 
       const valid = await Bun.password.verify(password, user.password_hash);
-      return valid ? user : undefined;
+      return valid ? UserSchema.parse(user) : undefined;
     }
   };
 }
+
+// Re-export types from types/user.ts
+export type { User, CreateUser } from '../types/user';
