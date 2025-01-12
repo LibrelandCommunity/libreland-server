@@ -1,6 +1,7 @@
 import { Elysia, t } from 'elysia'
 import * as path from "node:path"
 import { personMetadataOps } from '../../db'
+import { logUnimplementedRequest } from '../../utils/request-logger'
 
 export const createThingRoutes = () => {
   return new Elysia()
