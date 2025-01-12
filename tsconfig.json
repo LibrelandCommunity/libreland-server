@@ -1,8 +1,5 @@
 {
   "compilerOptions": {
-    "types": [
-      "bun-types"
-    ],
     "lib": [
       "ESNext"
     ],
@@ -20,6 +17,11 @@
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
     "allowJs": true,
-    "esModuleInterop": true
-  }
+    "types": [
+      "bun-types"
+    ]
+  },
+  "include": [
+    "src/**/*"
+  ]
 }
