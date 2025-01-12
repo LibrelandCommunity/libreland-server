@@ -1,4 +1,4 @@
-# ArchiveArea Data Structure
+# Archive Area Data Structure
 
 ## Bundle Directory
 Location: `data/area/bundle/`
