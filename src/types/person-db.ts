@@ -40,7 +40,7 @@ export const PersonAreaSchema = z.object({
   areaId: z.string(),
   areaName: z.string(),
   playerCount: z.number(),
-  isPrivate: z.boolean()
+  isPrivate: sqliteBoolean
 }).strict()
 
 // Export TypeScript types

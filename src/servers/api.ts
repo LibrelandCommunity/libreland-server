@@ -137,25 +137,33 @@ export const createAPIServer = () => {
 
                     if (areaData.areas && Array.isArray(areaData.areas)) {
                         for (const area of areaData.areas) {
-                            personMetadataOps.insertArea({
-                                personId: personId,
-                                areaId: area.id,
-                                areaName: area.name,
-                                playerCount: area.playerCount || 0,
-                                isPrivate: false
-                            })
+                            try {
+                                personMetadataOps.insertArea({
+                                    personId: personId,
+                                    areaId: area.id,
+                                    areaName: area.name,
+                                    playerCount: area.playerCount || 0,
+                                    isPrivate: false
+                                });
+                            } catch (e) {
+                                console.error(`Error inserting public area ${area.id} for person ${personId}:`, e);
+                            }
                         }
                     }
 
                     if (areaData.ownPrivateAreas && Array.isArray(areaData.ownPrivateAreas)) {
                         for (const area of areaData.ownPrivateAreas) {
-                            personMetadataOps.insertArea({
-                                personId: personId,
-                                areaId: area.id,
-                                areaName: area.name,
-                                playerCount: area.playerCount || 0,
-                                isPrivate: true
-                            })
+                            try {
+                                personMetadataOps.insertArea({
+                                    personId: personId,
+                                    areaId: area.id,
+                                    areaName: area.name,
+                                    playerCount: area.playerCount || 0,
+                                    isPrivate: true
+                                });
+                            } catch (e) {
+                                console.error(`Error inserting private area ${area.id} for person ${personId}:`, e);
+                            }
                         }
                     }
                 }
@@ -262,30 +270,28 @@ export const createAPIServer = () => {
                 if (!user) {
                     const person = personMetadataOps.findByScreenName(username);
 
-                    console.log("person", person)
-
-                const newUserData: CreateUser = {
-                    username,
-                    password,
+                    const newUserData: CreateUser = {
+                        username,
+                        password,
                         is_findable: person?.is_findable ?? true,
                         age: person?.age ?? 2226,
-                    age_secs: 192371963,
+                        age_secs: 192371963,
                         is_soft_banned: person?.is_banned ?? false,
-                    show_flag_warning: false,
-                    area_count: 1,
-                    thing_tag_count: 1,
-                    all_things_clonable: true,
-                    has_edit_tools: true,
-                    has_edit_tools_permanently: true,
-                    edit_tools_expiry_date: '9999-12-31T23:59:59.999Z',
-                    is_in_edit_tools_trial: true,
-                    was_edit_tools_trial_activated: true,
-                    custom_search_words: '',
-                    attachments: '{"0":{"Tid":"58a983128ca4690c104b6404","P":{"x":0,"y":0,"z":-1.4901161193847656e-7},"R":{"x":0,"y":0,"z":0}},"2":{"Tid":"58965e04569548a0132feb5e","P":{"x":-0.07462535798549652,"y":0.17594149708747864,"z":0.13412480056285858},"R":{"x":87.7847671508789,"y":73.62593841552734,"z":99.06474304199219}},"6":{"Tid":"58a25965b5fa68ae13841fb7","P":{"x":-0.03214322030544281,"y":-0.028440749272704124,"z":-0.3240281939506531},"R":{"x":306.4596862792969,"y":87.87753295898438,"z":94.79550170898438}},"7":{"Tid":"58965dfd9e2733c413d68d05","P":{"x":0.0267937108874321,"y":-0.03752899169921875,"z":-0.14691570401191711},"R":{"x":337.77911376953125,"y":263.3216857910156,"z":78.18708038330078}}}',
+                        show_flag_warning: false,
+                        area_count: 1,
+                        thing_tag_count: 1,
+                        all_things_clonable: true,
+                        has_edit_tools: true,
+                        has_edit_tools_permanently: true,
+                        edit_tools_expiry_date: '9999-12-31T23:59:59.999Z',
+                        is_in_edit_tools_trial: true,
+                        was_edit_tools_trial_activated: true,
+                        custom_search_words: '',
+                        attachments: '{"0":{"Tid":"58a983128ca4690c104b6404","P":{"x":0,"y":0,"z":-1.4901161193847656e-7},"R":{"x":0,"y":0,"z":0}},"2":{"Tid":"58965e04569548a0132feb5e","P":{"x":-0.07462535798549652,"y":0.17594149708747864,"z":0.13412480056285858},"R":{"x":87.7847671508789,"y":73.62593841552734,"z":99.06474304199219}},"6":{"Tid":"58a25965b5fa68ae13841fb7","P":{"x":-0.03214322030544281,"y":-0.028440749272704124,"z":-0.3240281939506531},"R":{"x":306.4596862792969,"y":87.87753295898438,"z":94.79550170898438}},"7":{"Tid":"58965dfd9e2733c413d68d05","P":{"x":0.0267937108874321,"y":-0.03752899169921875,"z":-0.14691570401191711},"R":{"x":337.77911376953125,"y":263.3216857910156,"z":78.18708038330078}}}',
                         achievements: [30, 7, 19, 4, 20, 11, 10, 5, 9, 17, 13, 12, 16, 37, 34, 35, 44, 31, 15, 27, 28],
                         person_id: person?.id,
                         status_text: person?.status_text ?? 'exploring around'
-                };
+                    };
 
                     try {
                         user = await userMetadataOps.insert(newUserData);
@@ -408,13 +414,40 @@ export const createAPIServer = () => {
             "/area/search",
             async ({ body: { term, byCreatorId } }: { body: { term: string, byCreatorId: string } }) => {
                 if (byCreatorId) {
-                    const file = Bun.file(path.resolve("./data/person/areasearch/", byCreatorId + ".json"))
 
-                    if (await file.exists()) {
-                        const text = await file.text()
-                        return Response.json(JSON.parse(text))
+                    // First check if this is a user ID and get their person_id if it exists
+                    const user = userMetadataOps.findById(byCreatorId);
+
+                    // If not a user, check if it's a person ID directly
+                    const person = personMetadataOps.findById(byCreatorId);
+
+                    // Use user's person_id if it exists, otherwise use the ID directly if it's a valid person
+                    const searchId = user?.person_id || (person ? byCreatorId : undefined);
+
+                    if (!searchId) {
+                        return { areas: [], ownPrivateAreas: [] };
                     }
-                    return { areas: [], ownPrivateAreas: [] }
+
+                    // Get areas created by this person
+                    const areas = personMetadataOps.getAreas(searchId);
+
+                    if (!areas.length) {
+                        return { areas: [], ownPrivateAreas: [] };
+                    }
+
+                    const result = {
+                        areas: areas.filter(a => !a.isPrivate).map(a => ({
+                            id: a.areaId,
+                            name: a.areaName,
+                            playerCount: a.playerCount
+                        })),
+                        ownPrivateAreas: areas.filter(a => a.isPrivate).map(a => ({
+                            id: a.areaId,
+                            name: a.areaName,
+                            playerCount: a.playerCount
+                        }))
+                    };
+                    return result;
                 }
 
                 const matchingAreas = searchArea(term)
@@ -487,14 +520,8 @@ export const createAPIServer = () => {
         )
         .post("/thing/topby",
             async ({ body: { id } }: { body: { id: string } }) => {
-                const file = Bun.file(path.resolve("./data/person/topby/", id + ".json"))
-
-                if (await file.exists()) {
-                    const text = await file.text()
-                    const diskData = JSON.parse(text)
-                    return { ids: diskData.ids.slice(0, 4) }
-                }
-                return { ids: [] }
+                const thingIds = personMetadataOps.getTopBy(id)
+                return { ids: thingIds.slice(0, 4) }
             },
             { body: t.Object({ id: t.String(), limit: t.String() }) }
         )
@@ -596,7 +623,7 @@ export const createAPIServer = () => {
         })
         .onError(({ code, error, request }) => {
             console.info("error in middleware!", request.url, code)
-            console.log(error)
+            console.error(error)
         })
         .listen({
             hostname: config.HOST,

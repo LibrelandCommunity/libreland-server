@@ -154,9 +154,22 @@ export function createPersonOperations(db: Database): PersonMetadataOperations {
     },
 
     getAreas: (personId) => {
-      const stmt = db.prepare('SELECT * FROM person_areas WHERE person_id = ?');
+      const query = 'SELECT person_id as personId, area_id as areaId, area_name as areaName, player_count as playerCount, is_private as isPrivate FROM person_areas WHERE person_id = ?';
+      const stmt = db.prepare(query);
       const areas = stmt.all(personId) as PersonArea[];
-      return areas.map(area => PersonAreaSchema.parse(area));
+      try {
+        return areas.map(area => {
+          try {
+            return PersonAreaSchema.parse(area);
+          } catch (e) {
+            console.error("Failed to parse area:", area, "Error:", e);
+            throw e;
+          }
+        });
+      } catch (e) {
+        console.error("Failed to process areas:", e);
+        return [];
+      }
     },
 
     insertTopBy: (personId, thingId, rank) => {
