@@ -1,6 +1,5 @@
 import z from 'zod'
-
-const sqliteBoolean = z.union([z.boolean(), z.number()]).transform(val => Boolean(val))
+import { sqliteBoolean } from './db'
 
 /**
  * User-related type definitions
