@@ -2,6 +2,8 @@ import { Database } from 'bun:sqlite';
 import * as path from 'node:path';
 import { initializeAreaTables, createAreaOperations, AreaMetadata, AreaMetadataOperations } from './area';
 import { initializeUserTables, createUserOperations, UserMetadataOperations } from './user';
+import { initializePersonTables, createPersonOperations, PersonMetadataOperations } from './person';
+import { PersonMetadata } from '../types/person-db';
 
 // Initialize database with optimized settings
 const db = new Database(path.join(process.cwd(), 'data', 'libreland.db'));
@@ -19,14 +21,17 @@ db.exec('PRAGMA busy_timeout = 5000'); // Wait up to 5s when the database is bus
 // Initialize all tables
 initializeAreaTables(db);
 initializeUserTables(db);
+initializePersonTables(db);
 
 // Create operations
 export const areaMetadataOps = createAreaOperations(db);
 export const userMetadataOps = createUserOperations(db);
+export const personMetadataOps = createPersonOperations(db);
 
 // Re-export types
 export type { AreaMetadata, AreaMetadataOperations };
 export type { UserMetadataOperations };
+export type { PersonMetadata, PersonMetadataOperations };
 
 // Export database instance for other operations
 export const getDb = () => db;

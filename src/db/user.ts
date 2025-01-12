@@ -17,6 +17,7 @@ export function initializeUserTables(db: Database) {
       password_hash TEXT NOT NULL,
       created_at INTEGER,
       updated_at INTEGER,
+      person_id TEXT,
       is_findable BOOLEAN DEFAULT true,
       age INTEGER DEFAULT 2226,
       age_secs INTEGER DEFAULT 192371963,
@@ -32,10 +33,13 @@ export function initializeUserTables(db: Database) {
       was_edit_tools_trial_activated BOOLEAN DEFAULT true,
       custom_search_words TEXT DEFAULT '',
       attachments TEXT DEFAULT '{"0":{"Tid":"58a983128ca4690c104b6404","P":{"x":0,"y":0,"z":-1.4901161193847656e-7},"R":{"x":0,"y":0,"z":0}},"2":{"Tid":"58965e04569548a0132feb5e","P":{"x":-0.07462535798549652,"y":0.17594149708747864,"z":0.13412480056285858},"R":{"x":87.7847671508789,"y":73.62593841552734,"z":99.06474304199219}},"6":{"Tid":"58a25965b5fa68ae13841fb7","P":{"x":-0.03214322030544281,"y":-0.028440749272704124,"z":-0.3240281939506531},"R":{"x":306.4596862792969,"y":87.87753295898438,"z":94.79550170898438}},"7":{"Tid":"58965dfd9e2733c413d68d05","P":{"x":0.0267937108874321,"y":-0.03752899169921875,"z":-0.14691570401191711},"R":{"x":337.77911376953125,"y":263.3216857910156,"z":78.18708038330078}}}',
-      achievements TEXT DEFAULT '[30,7,19,4,20,11,10,5,9,17,13,12,16,37,34,35,44,31,15,27,28]'
+      achievements TEXT DEFAULT '[30,7,19,4,20,11,10,5,9,17,13,12,16,37,34,35,44,31,15,27,28]',
+      status_text TEXT DEFAULT 'exploring around',
+      FOREIGN KEY(person_id) REFERENCES person_metadata(id)
     );
 
     CREATE INDEX IF NOT EXISTS idx_user_metadata_username ON user_metadata(username);
+    CREATE INDEX IF NOT EXISTS idx_user_metadata_person_id ON user_metadata(person_id);
   `);
 }
 
@@ -48,13 +52,14 @@ export function createUserOperations(db: Database): UserMetadataOperations {
 
       const stmt = db.prepare(`
         INSERT INTO user_metadata (
-          id, username, password_hash, created_at, updated_at,
+          id, username, password_hash, created_at, updated_at, person_id,
           is_findable, age, age_secs, is_soft_banned, show_flag_warning,
           area_count, thing_tag_count, all_things_clonable, has_edit_tools,
           has_edit_tools_permanently, edit_tools_expiry_date, is_in_edit_tools_trial,
-          was_edit_tools_trial_activated, custom_search_words, attachments, achievements
+          was_edit_tools_trial_activated, custom_search_words, attachments, achievements,
+          status_text
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
 
       stmt.run(
@@ -63,6 +68,7 @@ export function createUserOperations(db: Database): UserMetadataOperations {
         password_hash,
         now,
         now,
+        params.person_id ?? null,
         params.is_findable,
         params.age,
         params.age_secs,
@@ -78,7 +84,8 @@ export function createUserOperations(db: Database): UserMetadataOperations {
         params.was_edit_tools_trial_activated,
         params.custom_search_words,
         params.attachments,
-        JSON.stringify(params.achievements)
+        JSON.stringify(params.achievements),
+        params.status_text
       );
 
       const user = {
@@ -87,6 +94,7 @@ export function createUserOperations(db: Database): UserMetadataOperations {
         password_hash,
         created_at: now,
         updated_at: now,
+        person_id: params.person_id,
         is_findable: params.is_findable,
         age: params.age,
         age_secs: params.age_secs,
@@ -102,7 +110,8 @@ export function createUserOperations(db: Database): UserMetadataOperations {
         was_edit_tools_trial_activated: Boolean(params.was_edit_tools_trial_activated),
         custom_search_words: params.custom_search_words,
         attachments: params.attachments,
-        achievements: params.achievements
+        achievements: params.achievements,
+        status_text: params.status_text
       };
 
       return UserSchema.parse(user);

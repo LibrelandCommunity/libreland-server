@@ -9,15 +9,15 @@ import { Elysia, t } from 'elysia'
 import { swagger } from '@elysiajs/swagger'
 import { AreaInfoSchema } from "../types/area"
 import { config } from '../config/server'
-import { AreaIndexEntry, AreaList, AreaListArea } from '../types/area'
+import { AreaIndexEntry, AreaList } from '../types/area'
 import { HoldGeometryRequest } from '../types/geometry'
-import { generateObjectId } from '../utils/id'
 import { logUnimplementedRequest } from '../utils/request-logger'
 import _areaListData from '../mock/area-list.json'
 import friendsData from '../mock/friends.json'
 import forumsData from '../mock/forums.json'
-import { areaMetadataOps, userMetadataOps, AreaMetadata } from '../db'
+import { areaMetadataOps, userMetadataOps, personMetadataOps } from '../db'
 import { CreateUser, UserSession, UserAuthResponseSchema } from '../types/user'
+import { PersonInfoSchema, PersonGiftsReceived } from '../types/person'
 
 type PartialAreaList = Omit<AreaList, 'featured'>
 const areaListData = _areaListData as PartialAreaList
@@ -74,6 +74,117 @@ export const createAPIServer = () => {
         }
     }
 
+    // Load person data
+    console.log("Loading persons into database...")
+    const loadPersons = async () => {
+        const files = await fs.readdir("./data/person/info")
+
+        for (const filename of files) {
+            const file = Bun.file(path.join("./data/person/info", filename))
+            if (!await file.exists()) continue
+
+            const text = await file.text()
+            const personInfo = await PersonInfoSchema.parseAsync(JSON.parse(text))
+            const personId = path.parse(filename).name
+
+            // Only process persons with full profiles
+            if (!('id' in personInfo) || !('screenName' in personInfo)) continue
+
+            try {
+                personMetadataOps.insert({
+                    id: personId,
+                    screen_name: personInfo.screenName,
+                    age: 'age' in personInfo ? personInfo.age : undefined,
+                    status_text: 'statusText' in personInfo ? personInfo.statusText : undefined,
+                    is_findable: 'isFindable' in personInfo ? personInfo.isFindable : undefined,
+                    is_banned: 'isBanned' in personInfo ? personInfo.isBanned : undefined,
+                    last_activity_on: 'lastActivityOn' in personInfo ? personInfo.lastActivityOn : undefined
+                })
+
+                // Load gifts
+                const giftFile = Bun.file(path.join("./data/person/gift", filename))
+                if (await giftFile.exists()) {
+                    const giftText = await giftFile.text()
+                    const giftData = await PersonGiftsReceived.parseAsync(JSON.parse(giftText))
+
+                    if ('gifts' in giftData && Array.isArray(giftData.gifts)) {
+                        for (const gift of giftData.gifts) {
+                            personMetadataOps.insertGift({
+                                id: gift.id,
+                                personId: personId,
+                                thingId: gift.thingId,
+                                rotationX: gift.rotationX,
+                                rotationY: gift.rotationY,
+                                rotationZ: gift.rotationZ,
+                                positionX: gift.positionX,
+                                positionY: gift.positionY,
+                                positionZ: gift.positionZ,
+                                dateSent: gift.dateSent,
+                                senderId: gift.senderId,
+                                senderName: gift.senderName,
+                                wasSeenByReceiver: gift.wasSeenByReceiver,
+                                isPrivate: gift.isPrivate
+                            })
+                        }
+                    }
+                }
+
+                // Load areas
+                const areaFile = Bun.file(path.join("./data/person/areasearch", filename))
+                if (await areaFile.exists()) {
+                    const areaText = await areaFile.text()
+                    const areaData = JSON.parse(areaText)
+
+                    if (areaData.areas && Array.isArray(areaData.areas)) {
+                        for (const area of areaData.areas) {
+                            personMetadataOps.insertArea({
+                                personId: personId,
+                                areaId: area.id,
+                                areaName: area.name,
+                                playerCount: area.playerCount || 0,
+                                isPrivate: false
+                            })
+                        }
+                    }
+
+                    if (areaData.ownPrivateAreas && Array.isArray(areaData.ownPrivateAreas)) {
+                        for (const area of areaData.ownPrivateAreas) {
+                            personMetadataOps.insertArea({
+                                personId: personId,
+                                areaId: area.id,
+                                areaName: area.name,
+                                playerCount: area.playerCount || 0,
+                                isPrivate: true
+                            })
+                        }
+                    }
+                }
+
+                // Load topby data
+                const topbyFile = Bun.file(path.join("./data/person/topby", filename))
+                if (await topbyFile.exists()) {
+                    const topbyText = await topbyFile.text()
+                    const topbyData = JSON.parse(topbyText)
+
+                    if (topbyData.ids && Array.isArray(topbyData.ids)) {
+                        topbyData.ids.forEach((thingId: string, index: number) => {
+                            personMetadataOps.insertTopBy(personId, thingId, index)
+                        })
+                    }
+                }
+            } catch (e) {
+                const error = e as DatabaseError
+                // Person likely already exists, skip
+                if (error.code !== 'SQLITE_CONSTRAINT_UNIQUE') {
+                    console.error("Error inserting person:", error)
+                }
+            }
+        }
+    }
+
+    // Call loadAreas and loadPersons on startup
+    Promise.all([loadAreas(), loadPersons()]).catch(console.error)
+
     const searchArea = (term: string): AreaIndexEntry[] => {
         return areaMetadataOps.search(term, 50).map(row => ({
             id: row.id,
@@ -87,9 +198,6 @@ export const createAPIServer = () => {
         const result = areaMetadataOps.findByUrlName(areaUrlName)
         return result?.id
     }
-
-    // Call loadAreas on startup
-    loadAreas().catch(console.error)
 
     // Hold geometry storage
     // TODO: Implement proper storage solution
@@ -150,13 +258,19 @@ export const createAPIServer = () => {
                 // First check if user exists
                 let user = userMetadataOps.findByUsername(username);
 
+                // If no existing user, check if there's a matching person
+                if (!user) {
+                    const person = personMetadataOps.findByScreenName(username);
+
+                    console.log("person", person)
+
                 const newUserData: CreateUser = {
                     username,
                     password,
-                    is_findable: true,
-                    age: 2226,
+                        is_findable: person?.is_findable ?? true,
+                        age: person?.age ?? 2226,
                     age_secs: 192371963,
-                    is_soft_banned: false,
+                        is_soft_banned: person?.is_banned ?? false,
                     show_flag_warning: false,
                     area_count: 1,
                     thing_tag_count: 1,
@@ -168,11 +282,11 @@ export const createAPIServer = () => {
                     was_edit_tools_trial_activated: true,
                     custom_search_words: '',
                     attachments: '{"0":{"Tid":"58a983128ca4690c104b6404","P":{"x":0,"y":0,"z":-1.4901161193847656e-7},"R":{"x":0,"y":0,"z":0}},"2":{"Tid":"58965e04569548a0132feb5e","P":{"x":-0.07462535798549652,"y":0.17594149708747864,"z":0.13412480056285858},"R":{"x":87.7847671508789,"y":73.62593841552734,"z":99.06474304199219}},"6":{"Tid":"58a25965b5fa68ae13841fb7","P":{"x":-0.03214322030544281,"y":-0.028440749272704124,"z":-0.3240281939506531},"R":{"x":306.4596862792969,"y":87.87753295898438,"z":94.79550170898438}},"7":{"Tid":"58965dfd9e2733c413d68d05","P":{"x":0.0267937108874321,"y":-0.03752899169921875,"z":-0.14691570401191711},"R":{"x":337.77911376953125,"y":263.3216857910156,"z":78.18708038330078}}}',
-                    achievements: [30, 7, 19, 4, 20, 11, 10, 5, 9, 17, 13, 12, 16, 37, 34, 35, 44, 31, 15, 27, 28]
+                        achievements: [30, 7, 19, 4, 20, 11, 10, 5, 9, 17, 13, 12, 16, 37, 34, 35, 44, 31, 15, 27, 28],
+                        person_id: person?.id,
+                        status_text: person?.status_text ?? 'exploring around'
                 };
 
-                // If no existing user, create one
-                if (!user) {
                     try {
                         user = await userMetadataOps.insert(newUserData);
                     } catch (e) {
@@ -197,7 +311,7 @@ export const createAPIServer = () => {
                     personId: user.id,
                     homeAreaId: '5773cf9fbdee942c18292f08', // sunbeach
                     screenName: user.username,
-                    statusText: 'exploring around (my id: ' + user.id + ')',
+                    statusText: user.status_text,
                     isFindable: user.is_findable,
                     age: user.age,
                     ageSecs: user.age_secs,
