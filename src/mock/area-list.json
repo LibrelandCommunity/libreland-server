@@ -1,0 +1,41 @@
+{
+  "visited": [
+    {
+      "id": "58181d33160c0d921301ea5f",
+      "name": "nightclub raves-parties-fun",
+      "description": "rave, party, meet and chat with new people, play music, and have fun on stage as the dj!!!",
+      "playerCount": 0
+    },
+    {
+      "id": "5debf46f94e24b0625f09a21",
+      "name": "mol4yn's home",
+      "playerCount": 0
+    },
+    {
+      "id": "577610d2bdee942c18292f22",
+      "name": "bluecastle",
+      "description": "a medieval castle in a nature setting, with bow game",
+      "playerCount": 0
+    }
+  ],
+  "created": [],
+  "totalOnline": 0,
+  "totalAreas": 44182,
+  "totalPublicAreas": 32948,
+  "totalSearchablePublicAreas": 32835,
+  "popular": [
+    {
+      "name": "buildtown",
+      "description": "welcome to this area to help with your first building tries and chat! a place to find friends, too.",
+      "id": "57f67019817496af5268f719",
+      "playerCount": 0
+    }
+  ],
+  "popular_rnd": [],
+  "newest": [],
+  "popularNew": [],
+  "popularNew_rnd": [],
+  "lively": [],
+  "favorite": [],
+  "mostFavorited": []
+}

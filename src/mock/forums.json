@@ -1,0 +1,36 @@
+{
+  "forums": [
+    {
+      "name": "help",
+      "description": "for all your anyland questions",
+      "creatorId": "5773b5232da36d2d18b870fb",
+      "creatorName": "philipp",
+      "threadCount": 346,
+      "latestCommentDate": "2023-12-21T09:35:12.880Z",
+      "protectionLevel": 0,
+      "creationDate": "2016-12-06T16:31:52.285Z",
+      "dialogThingId": "58481eb85a0dc5b20d48e6f8",
+      "dialogColor": "255,255,255",
+      "latestCommentText": "this is epic!",
+      "latestCommentUserId": "622d80e81ee78204797e0e4e",
+      "latestCommentUserName": "Captain Crunch",
+      "id": "5846f540e8593a971395c0aa"
+    },
+    {
+      "name": "updates",
+      "description": "find out what's new with anylad. feature announcements and bug fix info. thanks all!",
+      "creatorId": "5773b5232da36d2d18b870fb",
+      "creatorName": "philipp",
+      "threadCount": 426,
+      "latestCommentDate": "2023-12-13T00:16:12.269Z",
+      "protectionLevel": 1,
+      "creationDate": "2016-12-06T15:17:21.186Z",
+      "dialogThingId": "58483a3b5a0dc5b20d48e6fe",
+      "dialogColor": "75,226,187",
+      "latestCommentText": "im gonna miss it for sure",
+      "latestCommentUserId": "57fa1a9a062bfb6013e320e9",
+      "latestCommentUserName": "cet cherinyakov",
+      "id": "5846f556b09fa5d709e5f6fe"
+    }
+  ]
+}

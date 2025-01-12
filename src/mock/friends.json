@@ -1,0 +1,17 @@
+{
+  "online": {
+    "friends": []
+  },
+  "offline": {
+    "friends": [
+      {
+        "lastActivityOn": "2023-11-30T19:07:20.576Z",
+        "screenName": "philipp",
+        "statusText": "great meeting all of you! [board: philbox] ...",
+        "id": "5773b5232da36d2d18b870fb",
+        "isOnline": false,
+        "strength": null
+      }
+    ]
+  }
+}
