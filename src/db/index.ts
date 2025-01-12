@@ -3,6 +3,7 @@ import * as path from 'node:path';
 import { initializeAreaTables, createAreaOperations, createAreaInfoOperations, loadAreaInfoFiles, AreaMetadata, AreaMetadataOperations, AreaInfoMetadataOperations } from './area';
 import { initializeUserTables, createUserOperations, UserMetadataOperations } from './user';
 import { initializePersonTables, createPersonOperations, PersonMetadataOperations } from './person';
+import { initializeForumTables, createForumOperations, ForumMetadataOperations } from './forum';
 import { PersonMetadata } from '../types/person-db';
 import { SqliteBoolean } from '../types/db';
 import * as fs from 'fs';
@@ -28,12 +29,14 @@ db.exec('PRAGMA busy_timeout = 5000'); // Wait up to 5s when the database is bus
 initializeAreaTables(db);
 initializeUserTables(db);
 initializePersonTables(db);
+initializeForumTables(db);
 
 // Create operations
 export const areaMetadataOps = createAreaOperations(db);
 export const areaInfoMetadataOps = createAreaInfoOperations(db);
 export const userMetadataOps = createUserOperations(db);
 export const personMetadataOps = createPersonOperations(db);
+export const forumMetadataOps = createForumOperations(db);
 
 // Only load data if this is a new database
 if (isNewDatabase) {
@@ -351,16 +354,95 @@ if (isNewDatabase) {
     }
   };
 
+  // Load forum data
+  console.log('Loading forum data...');
+  const loadForumData = () => {
+    const forumDir = path.join(process.cwd(), 'data', 'forum');
+
+    // Load forum metadata
+    const forumMetadataDir = path.join(forumDir, 'forum');
+    try {
+      const files = fs.readdirSync(forumMetadataDir);
+      for (const file of files) {
+        if (!file.endsWith('.json')) continue;
+
+        const filePath = path.join(forumMetadataDir, file);
+        try {
+          const content = fs.readFileSync(filePath, 'utf-8');
+          const data = JSON.parse(content);
+          const forumId = file.replace('.json', '');
+
+          if (data.ok && data.forum) {
+            try {
+              forumMetadataOps.insert({
+                ...data.forum,
+                id: forumId
+              });
+
+              // Insert threads
+              for (const thread of [...(data.threads || []), ...(data.stickies || [])]) {
+                try {
+                  forumMetadataOps.insertThread(thread);
+                } catch (e) {
+                  console.error(`Error inserting thread ${thread.id} for forum ${forumId}:`, e);
+                }
+              }
+            } catch (e) {
+              console.error(`Error inserting forum ${forumId}:`, e);
+            }
+          }
+        } catch (e) {
+          console.error(`Error processing forum file ${file}:`, e);
+        }
+      }
+    } catch (e) {
+      console.error('Error reading forum directory:', e);
+    }
+
+    // Load thread data with comments
+    const threadDir = path.join(forumDir, 'thread');
+    try {
+      const files = fs.readdirSync(threadDir);
+      for (const file of files) {
+        if (!file.endsWith('.json')) continue;
+
+        const filePath = path.join(threadDir, file);
+        try {
+          const content = fs.readFileSync(filePath, 'utf-8');
+          const data = JSON.parse(content);
+          const threadId = file.replace('.json', '');
+
+          if (data.ok && data.thread && data.thread.comments) {
+            // Insert comments
+            for (const comment of data.thread.comments) {
+              try {
+                forumMetadataOps.insertComment(threadId, comment);
+              } catch (e) {
+                console.error(`Error inserting comment for thread ${threadId}:`, e);
+              }
+            }
+          }
+        } catch (e) {
+          console.error(`Error processing thread file ${file}:`, e);
+        }
+      }
+    } catch (e) {
+      console.error('Error reading thread directory:', e);
+    }
+  };
+
   // Load area metadata from load files
   loadAreaMetadata();
   loadPersonData();
   await loadUserData();
+  loadForumData();
 }
 
 // Re-export types
 export type { AreaMetadata, AreaMetadataOperations, AreaInfoMetadataOperations };
 export type { UserMetadataOperations };
 export type { PersonMetadata, PersonMetadataOperations };
+export type { ForumMetadataOperations };
 
 // Export database instance for other operations
 export const getDb = () => db;
