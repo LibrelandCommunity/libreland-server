@@ -1,6 +1,7 @@
 import { Database } from 'bun:sqlite';
 import { generateObjectId } from '../utils/id';
 import { User, CreateUser, UserSchema } from '../types/user';
+import { SqliteBoolean } from '../types/db';
 
 export interface UserMetadataOperations {
   insert: (params: CreateUser) => Promise<User>;
@@ -95,19 +96,19 @@ export function createUserOperations(db: Database): UserMetadataOperations {
         created_at: now,
         updated_at: now,
         person_id: params.person_id,
-        is_findable: params.is_findable,
+        is_findable: Number(params.is_findable) as SqliteBoolean,
         age: params.age,
         age_secs: params.age_secs,
-        is_soft_banned: Boolean(params.is_soft_banned),
-        show_flag_warning: Boolean(params.show_flag_warning),
+        is_soft_banned: Number(params.is_soft_banned) as SqliteBoolean,
+        show_flag_warning: Number(params.show_flag_warning) as SqliteBoolean,
         area_count: params.area_count,
         thing_tag_count: params.thing_tag_count,
-        all_things_clonable: Boolean(params.all_things_clonable),
-        has_edit_tools: Boolean(params.has_edit_tools),
-        has_edit_tools_permanently: Boolean(params.has_edit_tools_permanently),
+        all_things_clonable: Number(params.all_things_clonable) as SqliteBoolean,
+        has_edit_tools: Number(params.has_edit_tools) as SqliteBoolean,
+        has_edit_tools_permanently: Number(params.has_edit_tools_permanently) as SqliteBoolean,
         edit_tools_expiry_date: params.edit_tools_expiry_date,
-        is_in_edit_tools_trial: Boolean(params.is_in_edit_tools_trial),
-        was_edit_tools_trial_activated: Boolean(params.was_edit_tools_trial_activated),
+        is_in_edit_tools_trial: Number(params.is_in_edit_tools_trial) as SqliteBoolean,
+        was_edit_tools_trial_activated: Number(params.was_edit_tools_trial_activated) as SqliteBoolean,
         custom_search_words: params.custom_search_words,
         attachments: params.attachments,
         achievements: params.achievements,

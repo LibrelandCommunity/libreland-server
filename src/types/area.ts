@@ -35,6 +35,34 @@ export const AreaSearchSchema = z.object({
   ownPrivateAreas: z.array(AreaListArea),
 }).strict()
 
+export const AreaInfoMetadataSchema = z.object({
+  id: z.string(),
+  editors: z.array(z.object({
+    id: z.string(),
+    name: z.string().nullable(),
+    isOwner: z.boolean().optional().default(false)
+  })),
+  copiedFromAreas: z.array(z.object({
+    id: z.string(),
+    name: z.string()
+  })).default([]),
+  name: z.string(),
+  description: z.string().nullable().optional(),
+  urlName: z.string().optional(),
+  creatorId: z.string().optional(),
+  createdAt: z.string().optional(),
+  updatedAt: z.string().optional(),
+  isZeroGravity: z.union([z.boolean(), z.number(), z.null()]).transform(val => Boolean(val)).default(false),
+  hasFloatingDust: z.union([z.boolean(), z.number(), z.null()]).transform(val => Boolean(val)).default(false),
+  isCopyable: z.union([z.boolean(), z.number(), z.null()]).transform(val => Boolean(val)).default(false),
+  isExcluded: z.union([z.boolean(), z.number()]).transform(val => Boolean(val)).default(false),
+  renameCount: z.number().default(0),
+  copiedCount: z.number().default(0),
+  isFavorited: z.union([z.boolean(), z.number()]).transform(val => Boolean(val)).default(false)
+}).strict()
+
+export type AreaInfoMetadata = z.infer<typeof AreaInfoMetadataSchema>
+
 export const EditorSchema = z.object({
   id: z.string(),
   name: z.string().nullable(),

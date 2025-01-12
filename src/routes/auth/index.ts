@@ -1,6 +1,7 @@
 import { Elysia } from 'elysia'
 import { UserAuthResponseSchema, UserSession } from '../../types/user'
 import { userMetadataOps, personMetadataOps } from '../../db'
+import { SqliteBoolean } from '../../types/db'
 
 export const createAuthRoutes = () => {
   return new Elysia()
@@ -19,19 +20,19 @@ export const createAuthRoutes = () => {
           const newUserData = {
             username,
             password,
-            is_findable: person?.is_findable ?? true,
+            is_findable: Number(person?.is_findable ?? true) as SqliteBoolean,
             age: person?.age ?? 2226,
             age_secs: 192371963,
-            is_soft_banned: person?.is_banned ?? false,
-            show_flag_warning: false,
+            is_soft_banned: Number(person?.is_banned ?? false) as SqliteBoolean,
+            show_flag_warning: 0 as SqliteBoolean,
             area_count: 1,
             thing_tag_count: 1,
-            all_things_clonable: true,
-            has_edit_tools: true,
-            has_edit_tools_permanently: true,
+            all_things_clonable: 1 as SqliteBoolean,
+            has_edit_tools: 1 as SqliteBoolean,
+            has_edit_tools_permanently: 1 as SqliteBoolean,
             edit_tools_expiry_date: '9999-12-31T23:59:59.999Z',
-            is_in_edit_tools_trial: true,
-            was_edit_tools_trial_activated: true,
+            is_in_edit_tools_trial: 1 as SqliteBoolean,
+            was_edit_tools_trial_activated: 1 as SqliteBoolean,
             custom_search_words: '',
             attachments: '{"0":{"Tid":"58a983128ca4690c104b6404","P":{"x":0,"y":0,"z":-1.4901161193847656e-7},"R":{"x":0,"y":0,"z":0}},"2":{"Tid":"58965e04569548a0132feb5e","P":{"x":-0.07462535798549652,"y":0.17594149708747864,"z":0.13412480056285858},"R":{"x":87.7847671508789,"y":73.62593841552734,"z":99.06474304199219}},"6":{"Tid":"58a25965b5fa68ae13841fb7","P":{"x":-0.03214322030544281,"y":-0.028440749272704124,"z":-0.3240281939506531},"R":{"x":306.4596862792969,"y":87.87753295898438,"z":94.79550170898438}},"7":{"Tid":"58965dfd9e2733c413d68d05","P":{"x":0.0267937108874321,"y":-0.03752899169921875,"z":-0.14691570401191711},"R":{"x":337.77911376953125,"y":263.3216857910156,"z":78.18708038330078}}}',
             achievements: [30, 7, 19, 4, 20, 11, 10, 5, 9, 17, 13, 12, 16, 37, 34, 35, 44, 31, 15, 27, 28],
@@ -64,7 +65,7 @@ export const createAuthRoutes = () => {
           homeAreaId: '5773cf9fbdee942c18292f08', // sunbeach
           screenName: user.username,
           statusText: user.status_text,
-          isFindable: user.is_findable,
+          isFindable: Boolean(user.is_findable),
           age: user.age,
           ageSecs: user.age_secs,
           attachments: user.attachments,

@@ -1,5 +1,5 @@
 import z from 'zod'
-import { sqliteBoolean } from './db'
+import { sqliteBoolean, SqliteBoolean } from './db'
 
 /**
  * User-related type definitions
@@ -72,7 +72,35 @@ export const UserAuthResponseSchema = z.object({
 }).strict()
 
 // Export TypeScript types
-export type User = z.infer<typeof UserSchema>
-export type CreateUser = z.infer<typeof CreateUserSchema>
+export interface User {
+  id: string;
+  username: string;
+  password_hash: string;
+  created_at: number;
+  updated_at: number;
+  person_id?: string;
+  is_findable: SqliteBoolean;
+  age: number;
+  age_secs: number;
+  is_soft_banned: SqliteBoolean;
+  show_flag_warning: SqliteBoolean;
+  area_count: number;
+  thing_tag_count: number;
+  all_things_clonable: SqliteBoolean;
+  has_edit_tools: SqliteBoolean;
+  has_edit_tools_permanently: SqliteBoolean;
+  edit_tools_expiry_date: string;
+  is_in_edit_tools_trial: SqliteBoolean;
+  was_edit_tools_trial_activated: SqliteBoolean;
+  custom_search_words: string;
+  attachments: string;
+  achievements: number[];
+  status_text: string;
+}
+
+export interface CreateUser extends Omit<User, 'id' | 'password_hash' | 'created_at' | 'updated_at'> {
+  password: string;
+}
+
 export type UserSession = z.infer<typeof UserSessionSchema>
 export type UserAuthResponse = z.infer<typeof UserAuthResponseSchema>

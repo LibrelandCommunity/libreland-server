@@ -1,5 +1,5 @@
 import z from 'zod';
-import { sqliteBoolean } from './db';
+import { sqliteBoolean, SqliteBoolean } from './db';
 
 export const PersonTopBySchema = z.object({
   person_id: z.string(),
@@ -30,8 +30,8 @@ export const PersonGiftSchema = z.object({
   dateSent: z.string(),
   senderId: z.string(),
   senderName: z.string(),
-  wasSeenByReceiver: z.boolean(),
-  isPrivate: z.boolean()
+  wasSeenByReceiver: sqliteBoolean,
+  isPrivate: sqliteBoolean
 }).strict()
 
 export const PersonAreaSchema = z.object({
@@ -43,6 +43,37 @@ export const PersonAreaSchema = z.object({
 }).strict()
 
 // Export TypeScript types
-export type PersonMetadata = z.infer<typeof PersonMetadataSchema>
-export type PersonGift = z.infer<typeof PersonGiftSchema>
-export type PersonArea = z.infer<typeof PersonAreaSchema>
+export interface PersonMetadata {
+  id: string;
+  screen_name: string;
+  age?: number;
+  status_text?: string;
+  is_findable?: SqliteBoolean;
+  is_banned?: SqliteBoolean;
+  last_activity_on?: string;
+}
+
+export interface PersonGift {
+  id: string;
+  personId: string;
+  thingId: string;
+  rotationX: number;
+  rotationY: number;
+  rotationZ: number;
+  positionX: number;
+  positionY: number;
+  positionZ: number;
+  dateSent: string;
+  senderId: string;
+  senderName: string;
+  wasSeenByReceiver: SqliteBoolean;
+  isPrivate: SqliteBoolean;
+}
+
+export interface PersonArea {
+  personId: string;
+  areaId: string;
+  areaName: string;
+  playerCount: number;
+  isPrivate: SqliteBoolean;
+}
