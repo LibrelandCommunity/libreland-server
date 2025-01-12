@@ -31,7 +31,7 @@
 | People/GetPersonInfoBasic | Gets basic information about a person | ❌ |
 | People/UpdateAttachment | Updates a person's attachment data | ❌ |
 | People/GetPersonInfo | Gets detailed information about a person | ❌ |
-| People/GetPersonFlagStatus | Gets flag status for a person | ❌ |
+| People/GetPersonFlagStatus | Gets flag status for a person | ✅ |
 
 ## User Authentication
 | Function | Description | Implemented |
