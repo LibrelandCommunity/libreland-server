@@ -4,6 +4,7 @@ import { initializeAreaTables, createAreaOperations, createAreaInfoOperations, l
 import { initializeUserTables, createUserOperations, UserMetadataOperations } from './user';
 import { initializePersonTables, createPersonOperations, PersonMetadataOperations } from './person';
 import { initializeForumTables, createForumOperations, ForumMetadataOperations } from './forum';
+import { initializePlacementTables, createPlacementOperations, loadPlacementFiles, PlacementMetadataOperations } from './placement';
 import { PersonMetadata } from '../types/person-db';
 import { SqliteBoolean } from '../types/db';
 import * as fs from 'fs';
@@ -30,6 +31,7 @@ initializeAreaTables(db);
 initializeUserTables(db);
 initializePersonTables(db);
 initializeForumTables(db);
+initializePlacementTables(db);
 
 // Create operations
 export const areaMetadataOps = createAreaOperations(db);
@@ -37,6 +39,7 @@ export const areaInfoMetadataOps = createAreaInfoOperations(db);
 export const userMetadataOps = createUserOperations(db);
 export const personMetadataOps = createPersonOperations(db);
 export const forumMetadataOps = createForumOperations(db);
+export const placementMetadataOps = createPlacementOperations(db);
 
 // Only load data if this is a new database
 if (isNewDatabase) {
@@ -48,7 +51,7 @@ if (isNewDatabase) {
   loadAreaInfoFiles(db);
 
   // Load area metadata from load files
-  console.log('Loading area metadata from load files...');
+  console.log('Loading area metadata files...');
   const loadAreaMetadata = () => {
     const loadDir = path.join(process.cwd(), 'data', 'area', 'load');
     try {
@@ -101,6 +104,10 @@ if (isNewDatabase) {
       console.error('Error reading area load directory:', e);
     }
   };
+
+  // Load placement data
+  console.log('Loading placement data...');
+  loadPlacementFiles(db);
 
   // Load person data
   console.log('Loading person data...');
@@ -443,6 +450,7 @@ export type { AreaMetadata, AreaMetadataOperations, AreaInfoMetadataOperations }
 export type { UserMetadataOperations };
 export type { PersonMetadata, PersonMetadataOperations };
 export type { ForumMetadataOperations };
+export type { PlacementMetadataOperations };
 
 // Export database instance for other operations
 export const getDb = () => db;
