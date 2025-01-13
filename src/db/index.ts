@@ -5,6 +5,7 @@ import { initializeUserTables, createUserOperations, UserMetadataOperations } fr
 import { initializePersonTables, createPersonOperations, PersonMetadataOperations } from './person';
 import { initializeForumTables, createForumOperations, ForumMetadataOperations } from './forum';
 import { initializePlacementTables, createPlacementOperations, loadPlacementFiles, PlacementMetadataOperations } from './placement';
+import { initializeThingTables, createThingOperations, loadThingFiles, ThingMetadataOperations } from './thing';
 import { PersonMetadata } from '../types/person-db';
 import { SqliteBoolean } from '../types/db';
 import * as fs from 'fs';
@@ -32,6 +33,7 @@ initializeUserTables(db);
 initializePersonTables(db);
 initializeForumTables(db);
 initializePlacementTables(db);
+initializeThingTables(db);
 
 // Create operations
 export const areaMetadataOps = createAreaOperations(db);
@@ -40,6 +42,7 @@ export const userMetadataOps = createUserOperations(db);
 export const personMetadataOps = createPersonOperations(db);
 export const forumMetadataOps = createForumOperations(db);
 export const placementMetadataOps = createPlacementOperations(db);
+export const thingMetadataOps = createThingOperations(db);
 
 // Only load data if this is a new database
 if (isNewDatabase) {
@@ -108,6 +111,10 @@ if (isNewDatabase) {
   // Load placement data
   console.log('Loading placement data...');
   loadPlacementFiles(db);
+
+  // Load thing data
+  console.log('Loading thing data...');
+  loadThingFiles(db);
 
   // Load person data
   console.log('Loading person data...');
@@ -451,6 +458,7 @@ export type { UserMetadataOperations };
 export type { PersonMetadata, PersonMetadataOperations };
 export type { ForumMetadataOperations };
 export type { PlacementMetadataOperations };
+export type { ThingMetadataOperations };
 
 // Export database instance for other operations
 export const getDb = () => db;
