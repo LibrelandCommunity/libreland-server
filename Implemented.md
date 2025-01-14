@@ -33,6 +33,7 @@
 | People/GetPersonInfo | Gets detailed information about a person | ✅ |
 | People/GetPersonFlagStatus | Gets flag status for a person | ✅ |
 | People/AddFriend | Adds a friend to a person | ✅ |
+| People/RemoveFriend | Removes a friend from a person | ✅ |
 
 ## User Authentication
 | Function | Description | Implemented |

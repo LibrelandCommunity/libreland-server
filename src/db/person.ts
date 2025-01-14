@@ -12,7 +12,9 @@ export interface PersonMetadataOperations {
   insertTopBy: (personId: string, thingId: string, rank: number) => void;
   getTopBy: (personId: string) => string[];
   insertFriend: (personId: string, friendId: string, strength?: number) => void;
+  removeFriend: (personId: string, friendId: string) => void;
   getFriendsByStrength: (personId: string) => Array<PersonMetadata & { strength?: number, isOnline: boolean }>;
+  isFriend: (personId: string, friendId: string) => boolean;
 }
 
 export function initializePersonTables(db: Database) {
@@ -251,6 +253,14 @@ export function createPersonOperations(db: Database): PersonMetadataOperations {
       stmt.run(personId, friendId, strength ?? null);
     },
 
+    removeFriend: (personId, friendId) => {
+      const stmt = db.prepare(`
+        DELETE FROM person_friends
+        WHERE person_id = ? AND friend_id = ?
+      `);
+      stmt.run(personId, friendId);
+    },
+
     getFriendsByStrength: (personId) => {
       const stmt = db.prepare(`
         SELECT
@@ -264,6 +274,15 @@ export function createPersonOperations(db: Database): PersonMetadataOperations {
       `);
 
       return stmt.all(personId) as Array<PersonMetadata & { strength?: number, isOnline: boolean }>;
+    },
+
+    isFriend: (personId, friendId) => {
+      const stmt = db.prepare(`
+        SELECT 1 FROM person_friends
+        WHERE person_id = ? AND friend_id = ?
+      `);
+      const result = stmt.get(personId, friendId);
+      return result !== undefined;
     }
   };
 }

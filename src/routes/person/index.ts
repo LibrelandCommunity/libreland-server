@@ -104,63 +104,119 @@ export const createPersonRoutes = () => {
         })
       }
     )
-    .post("person/info",
-      async ({ body: { areaId, userId } }: { body: { areaId: string, userId: string } }) => {
-        // Look up person in database
-        const person = personMetadataOps.findById(userId);
-
-        // Look up area info to check editor status
-        const areaInfo = areaInfoMetadataOps.findById(areaId);
-
-        // Default editor flags
-        let isEditorHere = false;
-        let isListEditorHere = false;
-        let isOwnerHere = false;
-        let isAreaLocked = false;
-
-        // Check editor status if area exists
-        if (areaInfo) {
-          // Check if person is an editor
-          const editor = areaInfo.editors.find((e: Editor) => e.id === userId);
-          if (editor) {
-            isEditorHere = true;
-            isOwnerHere = editor.isOwner || false;
+    .post("person/removefriend",
+      async ({ cookie: { s }, body: { id } }) => {
+        try {
+          // Get user ID from session
+          if (!s.value) {
+            return new Response("Unauthorized", { status: 401 });
           }
 
-          // TODO: Implement list editors and area lock status
-          // For now these will remain false
-        }
+          const session = JSON.parse(s.value) as UserSession;
+          if (!session?.id) {
+            return new Response("Unauthorized", { status: 401 });
+          }
 
-        // If person exists, return full info
-        if (person) {
+          // Get user's person ID from user metadata
+          const user = userMetadataOps.findById(session.id);
+          if (!user?.person_id) {
+            return new Response("User not found", { status: 404 });
+          }
+
+          // Remove friend relationship
+          personMetadataOps.removeFriend(user.person_id, id);
+
+          return { ok: true };
+        } catch (e) {
+          console.error("Error removing friend:", e);
+          return new Response("Error removing friend", { status: 500 });
+        }
+      },
+      {
+        body: t.Object({
+          id: t.String()
+        })
+      }
+    )
+    .post("person/info",
+      async ({ cookie: { s }, body: { areaId, userId } }) => {
+        try {
+          // Look up person in database
+          const person = personMetadataOps.findById(userId);
+
+          // Look up area info to check editor status
+          const areaInfo = areaInfoMetadataOps.findById(areaId);
+
+          // Default editor flags
+          let isEditorHere = false;
+          let isListEditorHere = false;
+          let isOwnerHere = false;
+          let isAreaLocked = false;
+
+          // Check editor status if area exists
+          if (areaInfo) {
+            // Check if person is an editor
+            const editor = areaInfo.editors.find((e: Editor) => e.id === userId);
+            if (editor) {
+              isEditorHere = true;
+              isOwnerHere = editor.isOwner || false;
+            }
+
+            // TODO: Implement list editors and area lock status
+            // For now these will remain false
+          }
+
+          // Get current user's person ID from session
+          let isFriend = false;
+          if (s.value) {
+            const session = JSON.parse(s.value) as UserSession;
+            if (session?.id) {
+              const currentUser = userMetadataOps.findById(session.id);
+              if (currentUser?.person_id) {
+                isFriend = personMetadataOps.isFriend(currentUser.person_id, userId);
+              }
+            }
+          }
+
+          // If person exists, return full info
+          if (person) {
+            return {
+              id: person.id,
+              screenName: person.screen_name,
+              age: person.age || 0,
+              statusText: person.status_text || "",
+              isFindable: Boolean(person.is_findable),
+              isBanned: Boolean(person.is_banned),
+              lastActivityOn: person.last_activity_on || new Date().toISOString(),
+              isFriend,
+              isEditorHere,
+              isListEditorHere,
+              isOwnerHere,
+              isAreaLocked,
+              isOnline: false // TODO: Implement online status tracking
+            }
+          }
+
+          // Return minimal info for non-existent users
           return {
-            id: person.id,
-            screenName: person.screen_name,
-            age: person.age || 0,
-            statusText: person.status_text || "",
-            isFindable: Boolean(person.is_findable),
-            isBanned: Boolean(person.is_banned),
-            lastActivityOn: person.last_activity_on || new Date().toISOString(),
-            isFriend: false, // TODO: Implement friend system
+            isFriend,
             isEditorHere,
             isListEditorHere,
             isOwnerHere,
             isAreaLocked,
-            isOnline: false // TODO: Implement online status tracking
+            isOnline: false
           }
-        }
-
-        // Return minimal info for non-existent users
-        return {
-          isFriend: false,
-          isEditorHere,
-          isListEditorHere,
-          isOwnerHere,
-          isAreaLocked,
-          isOnline: false
+        } catch (e) {
+          console.error("Error getting person info:", e);
+          return new Response("Error getting person info", { status: 500 });
         }
       },
-      { body: t.Object({ areaId: t.String(), userId: t.String() }) }
+      {
+        body: t.Object({
+          areaId: t.String(),
+          userId: t.String()
+        })
+      }
     )
     .post("/person/infobasic",
       async ({ body: { areaId, userId } }: { body: { areaId: string, userId: string } }) => {
