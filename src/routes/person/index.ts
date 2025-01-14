@@ -1,8 +1,9 @@
 import { Elysia, t } from 'elysia'
 import * as path from "node:path"
-import { personMetadataOps } from '../../db'
+import { personMetadataOps, areaInfoMetadataOps } from '../../db'
 import friendsData from '../../mock/friends.json'
 import { HoldGeometryRequest } from '../../types/geometry'
+import { Editor } from '../../types/area'
 
 // Hold geometry storage
 // TODO: Implement proper storage solution
@@ -25,13 +26,59 @@ export const createPersonRoutes = () => {
     )
     .post("person/info",
       async ({ body: { areaId, userId } }: { body: { areaId: string, userId: string } }) => {
-        const file = Bun.file(path.resolve("./data/person/info/", userId + ".json"))
+        // Look up person in database
+        const person = personMetadataOps.findById(userId);
 
-        if (await file.exists()) {
-          const text = await file.text()
-          return Response.json(JSON.parse(text))
+        // Look up area info to check editor status
+        const areaInfo = areaInfoMetadataOps.findById(areaId);
+
+        // Default editor flags
+        let isEditorHere = false;
+        let isListEditorHere = false;
+        let isOwnerHere = false;
+        let isAreaLocked = false;
+
+        // Check editor status if area exists
+        if (areaInfo) {
+          // Check if person is an editor
+          const editor = areaInfo.editors.find((e: Editor) => e.id === userId);
+          if (editor) {
+            isEditorHere = true;
+            isOwnerHere = editor.isOwner || false;
+          }
+
+          // TODO: Implement list editors and area lock status
+          // For now these will remain false
         }
-        return { "isFriend": false, "isEditorHere": false, "isListEditorHere": false, "isOwnerHere": false, "isAreaLocked": false, "isOnline": false }
+
+        // If person exists, return full info
+        if (person) {
+          return {
+            id: person.id,
+            screenName: person.screen_name,
+            age: person.age || 0,
+            statusText: person.status_text || "",
+            isFindable: Boolean(person.is_findable),
+            isBanned: Boolean(person.is_banned),
+            lastActivityOn: person.last_activity_on || new Date().toISOString(),
+            isFriend: false, // TODO: Implement friend system
+            isEditorHere,
+            isListEditorHere,
+            isOwnerHere,
+            isAreaLocked,
+            isOnline: false // TODO: Implement online status tracking
+          }
+        }
+
+        // Return minimal info for non-existent users
+        return {
+          isFriend: false,
+          isEditorHere,
+          isListEditorHere,
+          isOwnerHere,
+          isAreaLocked,
+          isOnline: false
+        }
       },
       { body: t.Object({ areaId: t.String(), userId: t.String() }) }
     )
