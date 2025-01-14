@@ -30,7 +30,7 @@
 | People/GetFriendsByStrength | Gets friends sorted by connection strength | ❌ |
 | People/GetPersonInfoBasic | Gets basic information about a person | ❌ |
 | People/UpdateAttachment | Updates a person's attachment data | ❌ |
-| People/GetPersonInfo | Gets detailed information about a person | ❌ |
+| People/GetPersonInfo | Gets detailed information about a person | ✅ |
 | People/GetPersonFlagStatus | Gets flag status for a person | ✅ |
 
 ## User Authentication
@@ -42,7 +42,7 @@
 ## Things
 | Function | Description | Implemented |
 |----------|-------------|-------------|
-| Things/GetTopThingIdsCreatedByPerson | Gets top things created by a person | ❌ |
+| Things/GetTopThingIdsCreatedByPerson | Gets top things created by a person | ✅ |
 | Things/GetThing | Gets or creates a thing | ❌ |
 | Things/GetThingInfo | Gets information about a thing | ❌ |
 | Things/GetThingFlagStatus | Gets flag status for a thing | ❌ |
