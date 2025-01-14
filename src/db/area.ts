@@ -15,13 +15,45 @@ export interface AreaMetadata {
   playerCount?: number;
 }
 
-export interface AreaMetadataOperations {
-  insert: (params: AreaMetadata) => void;
-  update: (params: AreaMetadata) => void;
-  findById: (id: string) => AreaMetadata | undefined;
-  findByUrlName: (urlName: string) => AreaMetadata | undefined;
-  search: (term: string, limit: number) => { areas: AreaMetadata[]; ownPrivateAreas: AreaMetadata[] };
-  updatePlayerCount: (id: string, count: number) => void;
+export interface AreaBundleMetadata {
+  id: string;
+  areaId: string;
+  bundleKey: string;
+  thingDefinitions: Array<{
+    id: string;
+    def: string;
+    serveTime: number;
+  }>;
+}
+
+export interface SubareaMetadata {
+  id: string;
+  parentAreaId: string;
+  name: string;
+  description?: string;
+}
+
+export interface AreaInfoMetadataOperations {
+  insert: (params: AreaInfoMetadata) => void;
+  update: (params: AreaInfoMetadata) => void;
+  findById: (id: string) => AreaInfoMetadata | undefined;
+  findByUrlName: (urlName: string) => AreaInfoMetadata | undefined;
+  delete: (id: string) => void;
+}
+
+export interface AreaBundleMetadataOperations {
+  insert: (params: AreaBundleMetadata) => void;
+  update: (params: AreaBundleMetadata) => void;
+  findById: (id: string) => AreaBundleMetadata | undefined;
+  findByAreaId: (areaId: string) => AreaBundleMetadata[];
+  delete: (id: string) => void;
+}
+
+export interface SubareaMetadataOperations {
+  insert: (params: SubareaMetadata) => void;
+  update: (params: SubareaMetadata) => void;
+  findById: (id: string) => SubareaMetadata | undefined;
+  findByParentAreaId: (parentAreaId: string) => SubareaMetadata[];
   delete: (id: string) => void;
 }
 
@@ -30,6 +62,30 @@ export interface AreaInfoMetadataOperations {
   update: (params: AreaInfoMetadata) => void;
   findById: (id: string) => AreaInfoMetadata | undefined;
   findByUrlName: (urlName: string) => AreaInfoMetadata | undefined;
+  delete: (id: string) => void;
+}
+
+export interface AreaLoadData {
+  id: string;
+  areaId: string;
+  rawData: string;
+}
+
+export interface AreaLoadDataOperations {
+  insert: (params: AreaLoadData) => void;
+  update: (params: AreaLoadData) => void;
+  findById: (id: string) => AreaLoadData | undefined;
+  findByAreaId: (areaId: string) => AreaLoadData | undefined;
+  delete: (id: string) => void;
+}
+
+export interface AreaMetadataOperations {
+  insert: (params: AreaMetadata) => void;
+  update: (params: AreaMetadata) => void;
+  findById: (id: string) => AreaMetadata | undefined;
+  findByUrlName: (urlName: string) => AreaMetadata | undefined;
+  search: (term: string, limit: number) => { areas: AreaMetadata[]; ownPrivateAreas: AreaMetadata[] };
+  updatePlayerCount: (id: string, count: number) => void;
   delete: (id: string) => void;
 }
 
@@ -67,11 +123,38 @@ export function initializeAreaTables(db: Database) {
       is_favorited BOOLEAN NOT NULL DEFAULT false
     );
 
+    CREATE TABLE IF NOT EXISTS area_bundle_metadata (
+      id TEXT PRIMARY KEY,
+      area_id TEXT NOT NULL,
+      bundle_key TEXT NOT NULL,
+      thing_definitions TEXT NOT NULL,
+      raw_data TEXT NOT NULL,
+      FOREIGN KEY(area_id) REFERENCES area_metadata(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS area_load_data (
+      id TEXT PRIMARY KEY,
+      area_id TEXT NOT NULL,
+      raw_data TEXT NOT NULL,
+      FOREIGN KEY(area_id) REFERENCES area_metadata(id) ON DELETE CASCADE
+    );
+
+    CREATE TABLE IF NOT EXISTS subarea_metadata (
+      id TEXT PRIMARY KEY,
+      parent_area_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      description TEXT,
+      FOREIGN KEY(parent_area_id) REFERENCES area_metadata(id) ON DELETE CASCADE
+    );
+
     CREATE INDEX IF NOT EXISTS idx_area_metadata_name ON area_metadata(name);
     CREATE INDEX IF NOT EXISTS idx_area_metadata_url_name ON area_metadata(url_name);
     CREATE INDEX IF NOT EXISTS idx_area_metadata_creator ON area_metadata(creator_id);
     CREATE INDEX IF NOT EXISTS idx_area_info_metadata_name ON area_info_metadata(name);
     CREATE INDEX IF NOT EXISTS idx_area_info_metadata_url_name ON area_info_metadata(url_name);
+    CREATE INDEX IF NOT EXISTS idx_area_bundle_metadata_area_id ON area_bundle_metadata(area_id);
+    CREATE INDEX IF NOT EXISTS idx_area_load_data_area_id ON area_load_data(area_id);
+    CREATE INDEX IF NOT EXISTS idx_subarea_metadata_parent_area_id ON subarea_metadata(parent_area_id);
   `);
 }
 
@@ -353,8 +436,195 @@ export function createAreaInfoOperations(db: Database): AreaInfoMetadataOperatio
   };
 }
 
+export function createAreaBundleOperations(db: Database): AreaBundleMetadataOperations {
+  return {
+    insert: (params) => {
+      const stmt = db.prepare(`
+        INSERT INTO area_bundle_metadata (id, area_id, bundle_key, thing_definitions, raw_data)
+        VALUES (?, ?, ?, ?, ?)
+      `);
+      stmt.run(
+        params.id,
+        params.areaId,
+        params.bundleKey,
+        JSON.stringify(params.thingDefinitions),
+        JSON.stringify(params)
+      );
+    },
+
+    update: (params) => {
+      const stmt = db.prepare(`
+        UPDATE area_bundle_metadata
+        SET area_id = ?,
+            bundle_key = ?,
+            thing_definitions = ?,
+            raw_data = ?
+        WHERE id = ?
+      `);
+      stmt.run(
+        params.areaId,
+        params.bundleKey,
+        JSON.stringify(params.thingDefinitions),
+        JSON.stringify(params),
+        params.id
+      );
+    },
+
+    findById: (id) => {
+      const stmt = db.prepare('SELECT * FROM area_bundle_metadata WHERE id = ?');
+      const result = stmt.get(id) as any;
+      if (!result) return undefined;
+
+      return {
+        id: result.id,
+        areaId: result.area_id,
+        bundleKey: result.bundle_key,
+        thingDefinitions: JSON.parse(result.thing_definitions)
+      };
+    },
+
+    findByAreaId: (areaId) => {
+      const stmt = db.prepare('SELECT * FROM area_bundle_metadata WHERE area_id = ?');
+      const results = stmt.all(areaId) as any[];
+      return results.map(result => ({
+        id: result.id,
+        areaId: result.area_id,
+        bundleKey: result.bundle_key,
+        thingDefinitions: JSON.parse(result.thing_definitions)
+      }));
+    },
+
+    delete: (id) => {
+      const stmt = db.prepare('DELETE FROM area_bundle_metadata WHERE id = ?');
+      stmt.run(id);
+    }
+  };
+}
+
+export function createSubareaOperations(db: Database): SubareaMetadataOperations {
+  return {
+    insert: (params) => {
+      const stmt = db.prepare(`
+        INSERT INTO subarea_metadata (id, parent_area_id, name, description)
+        VALUES (?, ?, ?, ?)
+      `);
+      stmt.run(
+        params.id,
+        params.parentAreaId,
+        params.name,
+        params.description || null
+      );
+    },
+
+    update: (params) => {
+      const stmt = db.prepare(`
+        UPDATE subarea_metadata
+        SET parent_area_id = ?,
+            name = ?,
+            description = ?
+        WHERE id = ?
+      `);
+      stmt.run(
+        params.parentAreaId,
+        params.name,
+        params.description || null,
+        params.id
+      );
+    },
+
+    findById: (id) => {
+      const stmt = db.prepare('SELECT * FROM subarea_metadata WHERE id = ?');
+      const result = stmt.get(id) as any;
+      if (!result) return undefined;
+
+      return {
+        id: result.id,
+        parentAreaId: result.parent_area_id,
+        name: result.name,
+        description: result.description
+      };
+    },
+
+    findByParentAreaId: (parentAreaId) => {
+      const stmt = db.prepare('SELECT * FROM subarea_metadata WHERE parent_area_id = ?');
+      const results = stmt.all(parentAreaId) as any[];
+      return results.map(result => ({
+        id: result.id,
+        parentAreaId: result.parent_area_id,
+        name: result.name,
+        description: result.description
+      }));
+    },
+
+    delete: (id) => {
+      const stmt = db.prepare('DELETE FROM subarea_metadata WHERE id = ?');
+      stmt.run(id);
+    }
+  };
+}
+
+export function createAreaLoadDataOperations(db: Database): AreaLoadDataOperations {
+  return {
+    insert: (params) => {
+      const stmt = db.prepare(`
+        INSERT INTO area_load_data (id, area_id, raw_data)
+        VALUES (?, ?, ?)
+      `);
+      stmt.run(
+        params.id,
+        params.areaId,
+        params.rawData
+      );
+    },
+
+    update: (params) => {
+      const stmt = db.prepare(`
+        UPDATE area_load_data
+        SET area_id = ?,
+            raw_data = ?
+        WHERE id = ?
+      `);
+      stmt.run(
+        params.areaId,
+        params.rawData,
+        params.id
+      );
+    },
+
+    findById: (id) => {
+      const stmt = db.prepare('SELECT * FROM area_load_data WHERE id = ?');
+      const result = stmt.get(id) as any;
+      if (!result) return undefined;
+
+      return {
+        id: result.id,
+        areaId: result.area_id,
+        rawData: result.raw_data
+      };
+    },
+
+    findByAreaId: (areaId) => {
+      const stmt = db.prepare('SELECT * FROM area_load_data WHERE area_id = ?');
+      const result = stmt.get(areaId) as any;
+      if (!result) return undefined;
+
+      return {
+        id: result.id,
+        areaId: result.area_id,
+        rawData: result.raw_data
+      };
+    },
+
+    delete: (id) => {
+      const stmt = db.prepare('DELETE FROM area_load_data WHERE id = ?');
+      stmt.run(id);
+    }
+  };
+}
+
 export function loadAreaInfoFiles(db: Database) {
   const areaInfoOps = createAreaInfoOperations(db);
+  const areaOps = createAreaOperations(db);
   const infoDir = path.join(process.cwd(), 'data', 'area', 'info');
 
   try {
@@ -398,13 +668,34 @@ export function loadAreaInfoFiles(db: Database) {
           isFavorited: data.isFavorited || false
         };
 
+        // Also create area metadata entry
+        const areaMetadata: AreaMetadata = {
+          id: areaId,
+          name: data.name,
+          description: data.description,
+          urlName: data.urlName || areaId,
+          creatorId,
+          createdAt: data.createdAt ? new Date(data.createdAt).getTime() : undefined,
+          updatedAt: data.updatedAt ? new Date(data.updatedAt).getTime() : undefined,
+          isPrivate: false, // Default to false, will be updated from load file if needed
+          playerCount: 0
+        };
+
         // Validate and insert/update the area info
         try {
-          const existing = areaInfoOps.findById(areaId);
-          if (existing) {
+          const existingInfo = areaInfoOps.findById(areaId);
+          if (existingInfo) {
             areaInfoOps.update(areaInfo);
           } else {
             areaInfoOps.insert(areaInfo);
+          }
+
+          // Insert/update area metadata
+          const existingArea = areaOps.findById(areaId);
+          if (existingArea) {
+            areaOps.update(areaMetadata);
+          } else {
+            areaOps.insert(areaMetadata);
           }
         } catch (e) {
           console.error(`Error validating/saving area info for ${areaId}:`, e);
@@ -416,5 +707,159 @@ export function loadAreaInfoFiles(db: Database) {
     }
   } catch (e) {
     console.error('Error reading area info directory:', e);
+  }
+}
+
+export function loadAreaBundleFiles(db: Database) {
+  const bundleOps = createAreaBundleOperations(db);
+  const bundleDir = path.join(process.cwd(), 'data', 'area', 'bundle');
+
+  try {
+    // Read area directories
+    const areaDirs = fs.readdirSync(bundleDir);
+    for (const areaId of areaDirs) {
+      const areaPath = path.join(bundleDir, areaId);
+      if (!fs.statSync(areaPath).isDirectory()) continue;
+
+      try {
+        // Read bundle files in area directory
+        const files = fs.readdirSync(areaPath);
+        for (const file of files) {
+          if (!file.endsWith('.json')) continue;
+
+          const filePath = path.join(areaPath, file);
+          try {
+            const content = fs.readFileSync(filePath, 'utf-8');
+            const data = JSON.parse(content);
+            const bundleKey = file.replace('.json', '');
+            const bundleId = `${areaId}_${bundleKey}`;
+
+            try {
+              const bundle: AreaBundleMetadata = {
+                id: bundleId,
+                areaId,
+                bundleKey,
+                thingDefinitions: data.thingDefinitions.map((def: any) => ({
+                  id: def.id,
+                  def: def.def,
+                  serveTime: def.serveTime || 0
+                }))
+              };
+
+              // Store both the processed bundle and the raw data
+              const stmt = db.prepare(`
+                INSERT OR REPLACE INTO area_bundle_metadata (id, area_id, bundle_key, thing_definitions, raw_data)
+                VALUES (?, ?, ?, ?, ?)
+              `);
+              stmt.run(
+                bundleId,
+                areaId,
+                bundleKey,
+                JSON.stringify(bundle.thingDefinitions),
+                content // Store the original JSON content
+              );
+            } catch (e) {
+              console.error(`Error inserting/updating bundle ${bundleId}:`, e);
+            }
+          } catch (e) {
+            console.error(`Error processing bundle file ${file}:`, e);
+          }
+        }
+      } catch (e) {
+        console.error(`Error reading bundles for area ${areaId}:`, e);
+      }
+    }
+  } catch (e) {
+    console.error('Error reading bundle directory:', e);
+  }
+}
+
+export function loadAreaSubareaFiles(db: Database) {
+  const subareaOps = createSubareaOperations(db);
+  const areaOps = createAreaOperations(db);
+  const subareaDir = path.join(process.cwd(), 'data', 'area', 'subareas');
+
+  try {
+    const files = fs.readdirSync(subareaDir);
+    for (const file of files) {
+      if (!file.endsWith('.json')) continue;
+
+      const filePath = path.join(subareaDir, file);
+      try {
+        const content = fs.readFileSync(filePath, 'utf-8');
+        const data = JSON.parse(content);
+        const parentAreaId = file.replace('.json', '');
+
+        // Skip if parent area doesn't exist
+        if (!areaOps.findById(parentAreaId)) {
+          console.warn(`Skipping subareas for non-existent area ${parentAreaId}`);
+          continue;
+        }
+
+        // Process each subarea
+        for (const subarea of data.subAreas || []) {
+          try {
+            const subareaMetadata: SubareaMetadata = {
+              id: subarea.id,
+              parentAreaId,
+              name: subarea.name,
+              description: subarea.description
+            };
+
+            const existing = subareaOps.findById(subarea.id);
+            if (existing) {
+              subareaOps.update(subareaMetadata);
+            } else {
+              subareaOps.insert(subareaMetadata);
+            }
+          } catch (e) {
+            console.error(`Error inserting/updating subarea ${subarea.id} for area ${parentAreaId}:`, e);
+          }
+        }
+      } catch (e) {
+        console.error(`Error processing subarea file ${file}:`, e);
+      }
+    }
+  } catch (e) {
+    console.error('Error reading subarea directory:', e);
+  }
+}
+
+export function loadAreaLoadFiles(db: Database) {
+  const loadDataOps = createAreaLoadDataOperations(db);
+  const loadDir = path.join(process.cwd(), 'data', 'area', 'load');
+
+  try {
+    const files = fs.readdirSync(loadDir);
+    for (const file of files) {
+      if (!file.endsWith('.json')) continue;
+
+      const filePath = path.join(loadDir, file);
+      try {
+        const content = fs.readFileSync(filePath, 'utf-8');
+        const areaId = file.replace('.json', '');
+
+        try {
+          const loadData: AreaLoadData = {
+            id: areaId,
+            areaId,
+            rawData: content
+          };
+
+          const existing = loadDataOps.findById(areaId);
+          if (existing) {
+            loadDataOps.update(loadData);
+          } else {
+            loadDataOps.insert(loadData);
+          }
+        } catch (e) {
+          console.error(`Error inserting/updating load data for area ${areaId}:`, e);
+        }
+      } catch (e) {
+        console.error(`Error processing area load file ${file}:`, e);
+      }
+    }
+  } catch (e) {
+    console.error('Error reading area load directory:', e);
   }
 }

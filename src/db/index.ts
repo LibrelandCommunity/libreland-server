@@ -1,6 +1,6 @@
 import { Database } from 'bun:sqlite';
 import * as path from 'node:path';
-import { initializeAreaTables, createAreaOperations, createAreaInfoOperations, loadAreaInfoFiles, AreaMetadata, AreaMetadataOperations, AreaInfoMetadataOperations } from './area';
+import { initializeAreaTables, createAreaOperations, createAreaInfoOperations, createAreaBundleOperations, createSubareaOperations, createAreaLoadDataOperations, loadAreaInfoFiles, loadAreaBundleFiles, loadAreaSubareaFiles, loadAreaLoadFiles, AreaMetadata, AreaMetadataOperations, AreaInfoMetadataOperations, AreaBundleMetadataOperations, SubareaMetadataOperations, AreaLoadDataOperations } from './area';
 import { initializeUserTables, createUserOperations, UserMetadataOperations } from './user';
 import { initializePersonTables, createPersonOperations, PersonMetadataOperations } from './person';
 import { initializeForumTables, createForumOperations, ForumMetadataOperations } from './forum';
@@ -38,6 +38,9 @@ initializeThingTables(db);
 // Create operations
 export const areaMetadataOps = createAreaOperations(db);
 export const areaInfoMetadataOps = createAreaInfoOperations(db);
+export const areaBundleMetadataOps = createAreaBundleOperations(db);
+export const areaSubareaMetadataOps = createSubareaOperations(db);
+export const areaLoadDataOps = createAreaLoadDataOperations(db);
 export const userMetadataOps = createUserOperations(db);
 export const personMetadataOps = createPersonOperations(db);
 export const forumMetadataOps = createForumOperations(db);
@@ -49,7 +52,7 @@ if (isNewDatabase) {
   // Load data from files
   console.log('Populating database with archive data, please be patient this may take a few minutes...');
 
-  // Load area data
+  // Load area data in correct order
   console.log('Loading area info files...');
   loadAreaInfoFiles(db);
 
@@ -107,6 +110,18 @@ if (isNewDatabase) {
       console.error('Error reading area load directory:', e);
     }
   };
+  loadAreaMetadata();
+
+  // Load area load data
+  console.log('Loading area load files...');
+  loadAreaLoadFiles(db);
+
+  // Now that area metadata exists, load bundles and subareas
+  console.log('Loading area bundle files...');
+  loadAreaBundleFiles(db);
+
+  console.log('Loading area subarea files...');
+  loadAreaSubareaFiles(db);
 
   // Load placement data
   console.log('Loading placement data...');
@@ -445,15 +460,13 @@ if (isNewDatabase) {
     }
   };
 
-  // Load area metadata from load files
-  loadAreaMetadata();
   loadPersonData();
   await loadUserData();
   loadForumData();
 }
 
 // Re-export types
-export type { AreaMetadata, AreaMetadataOperations, AreaInfoMetadataOperations };
+export type { AreaMetadata, AreaMetadataOperations, AreaInfoMetadataOperations, AreaBundleMetadataOperations, SubareaMetadataOperations, AreaLoadDataOperations };
 export type { UserMetadataOperations };
 export type { PersonMetadata, PersonMetadataOperations };
 export type { ForumMetadataOperations };

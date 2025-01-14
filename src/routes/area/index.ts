@@ -137,11 +137,7 @@ export const createAreaRoutes = () => {
           return result;
         }
 
-        console.log("term", term)
-
         const searchResults = searchArea(term)
-
-        console.log("searchResults", searchResults)
         return searchResults // Return the complete object with both areas and ownPrivateAreas
       },
       { body: t.Object({ term: t.String(), byCreatorId: t.Optional(t.String()) }) }
