@@ -32,7 +32,21 @@ There are Swagger docs available at `/swagger` on for each server:
 * [Thing Defs Server - http://localhost:8002/swagger](http://localhost:8002/swagger)
 * [UGC Images Server - http://localhost:8003/swagger](http://localhost:8003/swagger)
 
-Generated documentation on the various data types and relationships can be found in the [docs](./docs) directory.
+You can find the current API implementation status in [Implemented.md](./Implemented.md).
+
+Generated documentation on the various data types and relationships can be found in the [docs](./docs) directory:
+
+* [Data Structure Overview](./docs/data-structure.md)
+* [Data Relationships](./docs/data-relationships.md)
+* [API Endpoints](./docs/api-endpoints.md)
+* [Area Format (Original)](./docs/area-format-original.md)
+* [Area Structure](./docs/archive-area-structure.md)
+* [Forum Structure](./docs/archive-forum-structure.md)
+* [Placement Structure](./docs/archive-placement-structure.md)
+* [Thing Structure](./docs/archive-thing-structure.md)
+* [Thing Format](./docs/thing-format.md)
+* [Thing Format (Original)](./docs/thing-format-original.md)
+* [User Structure](./docs/archive-user-structure.md)
 
 ## Development
 
