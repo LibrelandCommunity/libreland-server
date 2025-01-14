@@ -49,7 +49,7 @@
 | Things/GetThingDefinition | Gets a thing's definition data | ❌ |
 | Things/GetThingDefinitionCDN | Gets a thing's definition from CDN | ❌ |
 | Things/GetThingDefinitionAreaBundle | Gets bundled thing definitions for an area | ❌ |
-| Things/GetTags | Gets tags associated with a thing | ❌ |
+| Things/GetTags | Gets tags associated with a thing | ✅ |
 | Things/Search | Searches for things | ❌ |
 
 ## Placements

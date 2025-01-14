@@ -81,9 +81,11 @@ export const createThingRoutes = () => {
     .post(
       "/thing/gettags",
       async ({ body: { thingId } }: { body: { thingId: string } }) => {
-        const file = Bun.file(path.resolve("./data/thing/tags/", thingId + ".json"))
-        const text = await file.text()
-        return Response.json(JSON.parse(text))
+        const tags = thingMetadataOps.findTagById(thingId)
+        if (!tags) {
+          return Response.json({ tags: [] })
+        }
+        return Response.json({ tags: tags.tags })
       },
       { body: t.Object({ thingId: t.String() }) }
     )
