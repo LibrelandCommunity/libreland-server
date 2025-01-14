@@ -1,14 +1,17 @@
 import { Elysia, t } from 'elysia'
-import * as path from "node:path"
+import { Database } from 'bun:sqlite'
+import { PlacementMetadataOperations } from '../../db/placement'
 
-export const createPlacementRoutes = () => {
+export const createPlacementRoutes = (db: Database, placementOps: PlacementMetadataOperations) => {
   return new Elysia()
     .post(
       "/placement/info",
-      async ({ body: { areaId, placementId } }: { body: { areaId: string, placementId: string } }) => {
-        const file = Bun.file(path.resolve("./data/placement/info/", areaId, placementId + ".json"))
-        const text = await file.text()
-        return Response.json(JSON.parse(text))
+      ({ body: { areaId, placementId } }: { body: { areaId: string, placementId: string } }) => {
+        const placementInfo = placementOps.findById(areaId, placementId)
+        if (!placementInfo) {
+          return new Response('Placement not found', { status: 404 })
+        }
+        return Response.json(placementInfo)
       },
       { body: t.Object({ areaId: t.String(), placementId: t.String() }) }
     )

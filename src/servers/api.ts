@@ -14,6 +14,7 @@ import { createThingRoutes } from '../routes/thing'
 import { createForumRoutes } from '../routes/forum'
 import { createPlacementRoutes } from '../routes/placement'
 import { createGiftRoutes } from '../routes/gift'
+import { getDb, placementMetadataOps } from '../db'
 
 export const createAPIServer = () => {
     const app = new Elysia()
@@ -37,7 +38,7 @@ export const createAPIServer = () => {
         .use(createPersonRoutes())
         .use(createThingRoutes())
         .use(createForumRoutes())
-        .use(createPlacementRoutes())
+        .use(createPlacementRoutes(getDb(), placementMetadataOps))
         .use(createGiftRoutes())
         .all("*", async ({ request }) => {
             // Parse body based on content type

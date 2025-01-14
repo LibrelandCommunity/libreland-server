@@ -58,7 +58,7 @@
 | Placements/DeletePlacement | Deletes a thing placement | ❌ |
 | Placements/UpdatePlacement | Updates a thing's placement | ❌ |
 | Placements/NewPlacement | Creates a new thing placement | ❌ |
-| Placements/GetPlacementInfo | Gets information about a placement | ❌ |
+| Placements/GetPlacementInfo | Gets information about a placement | ✅ |
 
 ## Gifts
 | Function | Description | Implemented |

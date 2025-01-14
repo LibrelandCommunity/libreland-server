@@ -4,7 +4,7 @@ export const PlacementInfoSchema = z.object({
   placerId: z.string(),
   placerName: z.string().nullable(), // Might only be null for ground 000000000000000000000001
   placedDaysAgo: z.number(),
-  copiedVia: z.string().optional(),
+  copiedVia: z.string().nullable().optional(),
 }).strict()
 
 export const ItemInfoSchema = z.object({
