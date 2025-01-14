@@ -1,6 +1,6 @@
 import { Elysia, t } from 'elysia'
 import * as path from "node:path"
-import { areaMetadataOps, personMetadataOps, userMetadataOps } from '../../db'
+import { areaMetadataOps, personMetadataOps, userMetadataOps, areaLoadDataOps, areaInfoMetadataOps } from '../../db'
 import _areaListData from '../../mock/area-list.json'
 import type { BunFile } from 'bun'
 
@@ -25,41 +25,67 @@ const searchArea = (term: string) => {
   }
 }
 
+const formatUrlName = (name: string): string => {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+}
+
 const findAreaByUrlName = (areaUrlName: string): string | undefined => {
-  const result = areaMetadataOps.findByUrlName(areaUrlName)
-  return result?.id
+  const formattedUrlName = formatUrlName(areaUrlName)
+
+  // Try area_info_metadata first
+  const infoResult = areaInfoMetadataOps.findByUrlName(formattedUrlName)
+  if (infoResult) return infoResult.id
+
+  // Fall back to area_metadata
+  const metaResult = areaMetadataOps.findByUrlName(formattedUrlName)
+  return metaResult?.id
 }
 
 export const createAreaRoutes = () => {
   return new Elysia()
     .post(
       "/area/load",
-      async ({ body: { areaId, areaUrlName } }: { body: { areaId: string, areaUrlName: string } }) => {
-        if (areaId) {
-          const file = Bun.file(path.resolve("./data/area/load/", areaId + ".json"))
-          if (await file.exists()) {
-            const text = await file.text()
-            return Response.json(JSON.parse(text))
-          }
-          console.error("couldn't find area", areaId, "on disk?")
-          return Response.json({ "ok": false, "_reasonDenied": "Private", "serveTime": 13 }, { status: 200 })
-        }
-        else if (areaUrlName) {
-          const areaId = findAreaByUrlName(areaUrlName)
-          console.log("client asked to load", areaUrlName, " - found", areaId)
+      async ({ body: { areaId, areaUrlName, isPrivate } }: { body: { areaId?: string, areaUrlName?: string, isPrivate: string } }) => {
+        let targetAreaId = areaId
 
-          if (areaId) {
-            const file = Bun.file(path.resolve("./data/area/load/" + areaId + ".json"))
-            const text = await file.text()
-            return Response.json(JSON.parse(text))
+        if (!targetAreaId && areaUrlName) {
+          const formattedUrlName = formatUrlName(areaUrlName)
+          // Try area_info_metadata first
+          const infoArea = areaInfoMetadataOps.findByUrlName(formattedUrlName)
+          if (infoArea) {
+            targetAreaId = infoArea.id
+            console.log("client asked to load", areaUrlName, " - found in info metadata:", targetAreaId)
+          } else {
+            // Fall back to area_metadata
+            const metaArea = areaMetadataOps.findByUrlName(formattedUrlName)
+            if (metaArea) {
+              targetAreaId = metaArea.id
+              console.log("client asked to load", areaUrlName, " - found in area metadata:", targetAreaId)
+            }
           }
-          return Response.json({ "ok": false, "_reasonDenied": "Private", "serveTime": 13 }, { status: 200 })
         }
 
-        console.error("client asked for neither an areaId or an areaUrlName?")
+        if (targetAreaId) {
+          const areaLoadData = areaLoadDataOps.findByAreaId(targetAreaId)
+          if (areaLoadData) {
+            return Response.json(JSON.parse(areaLoadData.rawData))
+          }
+          console.error("couldn't find area", targetAreaId, "in database")
+        } else if (areaUrlName) {
+          console.error("couldn't find area with urlName", areaUrlName, "in database")
+        } else {
+          console.error("client asked for neither an areaId or an areaUrlName")
+        }
+
         return Response.json({ "ok": false, "_reasonDenied": "Private", "serveTime": 13 }, { status: 200 })
       },
-      { body: t.Object({ areaId: t.Optional(t.String()), areaUrlName: t.Optional(t.String()), isPrivate: t.String() }) }
+      {
+        body: t.Object({
+          areaId: t.Optional(t.String()),
+          areaUrlName: t.Optional(t.String()),
+          isPrivate: t.String()
+        })
+      }
     )
     .post(
       "/area/info",

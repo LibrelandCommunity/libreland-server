@@ -642,6 +642,20 @@ export function loadAreaInfoFiles(db: Database) {
         const owner = data.editors?.find((editor: any) => editor.isOwner);
         const creatorId = data.creatorId || owner?.id;
 
+        // Create a unique URL name by appending a number if needed
+        let baseUrlName = data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+        let urlName = baseUrlName;
+        let counter = 1;
+
+        while (true) {
+          const existing = areaInfoOps.findByUrlName(urlName);
+          if (!existing || existing.id === areaId) {
+            break;
+          }
+          urlName = `${baseUrlName}-${counter}`;
+          counter++;
+        }
+
         const areaInfo: AreaInfoMetadata = {
           id: areaId,
           editors: data.editors.map((editor: any) => ({
@@ -655,10 +669,10 @@ export function loadAreaInfoFiles(db: Database) {
           })) || [],
           name: data.name,
           description: data.description,
-          urlName: data.urlName || areaId, // Use areaId as fallback
+          urlName: urlName,
           creatorId,
-          createdAt: data.createdAt || new Date().toISOString(), // Use current time as fallback
-          updatedAt: data.updatedAt || new Date().toISOString(), // Use current time as fallback
+          createdAt: data.createdAt || new Date().toISOString(),
+          updatedAt: data.updatedAt || new Date().toISOString(),
           isZeroGravity: data.isZeroGravity,
           hasFloatingDust: data.hasFloatingDust,
           isCopyable: data.isCopyable,
@@ -673,7 +687,7 @@ export function loadAreaInfoFiles(db: Database) {
           id: areaId,
           name: data.name,
           description: data.description,
-          urlName: data.urlName || areaId,
+          urlName: urlName,
           creatorId,
           createdAt: data.createdAt ? new Date(data.createdAt).getTime() : undefined,
           updatedAt: data.updatedAt ? new Date(data.updatedAt).getTime() : undefined,
