@@ -44,7 +44,7 @@
 |----------|-------------|-------------|
 | Things/GetTopThingIdsCreatedByPerson | Gets top things created by a person | ✅ |
 | Things/GetThing | Gets or creates a thing | ❌ |
-| Things/GetThingInfo | Gets information about a thing | ❌ |
+| Things/GetThingInfo | Gets information about a thing | ✅ |
 | Things/GetThingFlagStatus | Gets flag status for a thing | ❌ |
 | Things/GetThingDefinition | Gets a thing's definition data | ❌ |
 | Things/GetThingDefinitionCDN | Gets a thing's definition from CDN | ❌ |

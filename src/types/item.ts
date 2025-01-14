@@ -55,7 +55,7 @@ export const ThingInfoSchema = z.object({
   createdDaysAgo: z.number(),
   collectedCount: z.number(),
   placedCount: z.number(),
-  clonedFromId: z.string().optional(),
+  clonedFromId: z.string().nullable(),
   allCreatorsThingsClonable: z.boolean(),
   isUnlisted: z.boolean()
 }).strict()

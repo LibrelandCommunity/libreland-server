@@ -1,6 +1,6 @@
 import { Elysia, t } from 'elysia'
 import * as path from "node:path"
-import { personMetadataOps } from '../../db'
+import { personMetadataOps, thingMetadataOps } from '../../db'
 import { logUnimplementedRequest } from '../../utils/request-logger'
 
 export const createThingRoutes = () => {
@@ -50,9 +50,25 @@ export const createThingRoutes = () => {
     )
     .get("/thing/info/:thingId",
       async ({ params: { thingId } }: { params: { thingId: string } }) => {
-        const file = Bun.file(path.resolve("./data/thing/info/", thingId + ".json"))
-        const text = await file.text()
-        return Response.json(JSON.parse(text))
+        let thingInfo;
+        try {
+          thingInfo = thingMetadataOps.findInfoById(thingId)
+        } catch (error) {
+          console.error("Error fetching thing info:", error)
+          return new Response("Internal server error", { status: 500 })
+        }
+
+        if (!thingInfo) {
+          return new Response("Thing not found", { status: 404 })
+        }
+
+        // Convert null clonedFromId to empty string for API compatibility
+        const response = {
+          ...thingInfo,
+          clonedFromId: thingInfo.clonedFromId === null ? "" : thingInfo.clonedFromId
+        }
+
+        return Response.json(response)
       }
     )
     .get("/thing/sl/tdef/:thingId",
