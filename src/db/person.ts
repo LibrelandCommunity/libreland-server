@@ -11,6 +11,8 @@ export interface PersonMetadataOperations {
   getAreas: (personId: string) => PersonArea[];
   insertTopBy: (personId: string, thingId: string, rank: number) => void;
   getTopBy: (personId: string) => string[];
+  insertFriend: (personId: string, friendId: string, strength?: number) => void;
+  getFriendsByStrength: (personId: string) => Array<PersonMetadata & { strength?: number, isOnline: boolean }>;
 }
 
 export function initializePersonTables(db: Database) {
@@ -62,11 +64,60 @@ export function initializePersonTables(db: Database) {
       FOREIGN KEY(person_id) REFERENCES person_metadata(id)
     );
 
+    CREATE TABLE IF NOT EXISTS person_friends (
+      person_id TEXT NOT NULL,
+      friend_id TEXT NOT NULL,
+      strength INTEGER,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY(person_id, friend_id),
+      FOREIGN KEY(person_id) REFERENCES person_metadata(id),
+      FOREIGN KEY(friend_id) REFERENCES person_metadata(id)
+    );
+
     CREATE INDEX IF NOT EXISTS idx_person_metadata_screen_name ON person_metadata(screen_name);
     CREATE INDEX IF NOT EXISTS idx_person_gifts_person_id ON person_gifts(person_id);
     CREATE INDEX IF NOT EXISTS idx_person_areas_person_id ON person_areas(person_id);
     CREATE INDEX IF NOT EXISTS idx_person_topby_person_id ON person_topby(person_id);
+    CREATE INDEX IF NOT EXISTS idx_person_friends_person_id ON person_friends(person_id);
   `);
+}
+
+export function populateInitialFriendData(db: Database, userId: string, friendsData: any) {
+  const ops = createPersonOperations(db);
+
+  // First ensure all friends exist in person_metadata
+  const allFriends = [
+    ...(friendsData.online?.friends || []),
+    ...(friendsData.offline?.friends || [])
+  ];
+
+  for (const friend of allFriends) {
+    try {
+      ops.insert({
+        id: friend.id,
+        screen_name: friend.screenName,
+        status_text: friend.statusText,
+        last_activity_on: friend.lastActivityOn
+      });
+    } catch (e: any) {
+      // Ignore duplicate key errors
+      if (!e.toString().includes('UNIQUE constraint failed')) {
+        throw e;
+      }
+    }
+  }
+
+  // Then create friend relationships
+  for (const friend of allFriends) {
+    try {
+      ops.insertFriend(userId, friend.id, friend.strength);
+    } catch (e: any) {
+      // Ignore duplicate key errors
+      if (!e.toString().includes('UNIQUE constraint failed')) {
+        throw e;
+      }
+    }
+  }
 }
 
 export function createPersonOperations(db: Database): PersonMetadataOperations {
@@ -189,6 +240,30 @@ export function createPersonOperations(db: Database): PersonMetadataOperations {
     getTopBy: (personId) => {
       const stmt = db.prepare('SELECT thing_id FROM person_topby WHERE person_id = ? ORDER BY rank ASC');
       return stmt.all(personId).map(row => (row as { thing_id: string }).thing_id);
+    },
+
+    insertFriend: (personId, friendId, strength) => {
+      const stmt = db.prepare(`
+        INSERT INTO person_friends (person_id, friend_id, strength)
+        VALUES (?, ?, ?)
+      `);
+
+      stmt.run(personId, friendId, strength ?? null);
+    },
+
+    getFriendsByStrength: (personId) => {
+      const stmt = db.prepare(`
+        SELECT
+          pm.*,
+          pf.strength,
+          false as isOnline
+        FROM person_friends pf
+        JOIN person_metadata pm ON pm.id = pf.friend_id
+        WHERE pf.person_id = ?
+        ORDER BY pf.strength DESC NULLS LAST
+      `);
+
+      return stmt.all(personId) as Array<PersonMetadata & { strength?: number, isOnline: boolean }>;
     }
   };
 }

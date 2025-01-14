@@ -341,13 +341,13 @@ export function loadThingFiles(db: Database) {
 
         const thingInfo: ThingInfo = {
           id: thingId,
-          name: data.name || "Thing",
-          creatorId: data.creatorId || "unknown",
-          creatorName: data.creatorName,
+          name: data.name,
+          creatorId: data.creatorId,
+          creatorName: data.creatorName || null,
           createdDaysAgo: data.createdDaysAgo || 0,
           collectedCount: data.collectedCount || 0,
           placedCount: data.placedCount || 0,
-          clonedFromId: data.clonedFromId,
+          clonedFromId: data.clonedFromId || null,
           allCreatorsThingsClonable: data.allCreatorsThingsClonable || false,
           isUnlisted: data.isUnlisted || false
         };

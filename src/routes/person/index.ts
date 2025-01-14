@@ -22,7 +22,22 @@ export const createPersonRoutes = () => {
       }
     )
     .get("person/friendsbystr",
-      () => friendsData
+      async ({ query: { userId } }) => {
+        const friends = personMetadataOps.getFriendsByStrength(userId);
+        return {
+          online: {
+            friends: friends.filter(f => f.isOnline)
+          },
+          offline: {
+            friends: friends.filter(f => !f.isOnline)
+          }
+        }
+      },
+      {
+        query: t.Object({
+          userId: t.String()
+        })
+      }
     )
     .post("person/info",
       async ({ body: { areaId, userId } }: { body: { areaId: string, userId: string } }) => {

@@ -42,6 +42,13 @@ export const PersonAreaSchema = z.object({
   isPrivate: sqliteBoolean
 }).strict()
 
+export const PersonFriendSchema = z.object({
+  person_id: z.string(),
+  friend_id: z.string(),
+  strength: z.number().optional(),
+  created_at: z.string().datetime()
+}).strict()
+
 // Export TypeScript types
 export interface PersonMetadata {
   id: string;
@@ -76,4 +83,11 @@ export interface PersonArea {
   areaName: string;
   playerCount: number;
   isPrivate: SqliteBoolean;
+}
+
+export interface PersonFriend {
+  person_id: string;
+  friend_id: string;
+  strength?: number;
+  created_at: string;
 }
