@@ -27,11 +27,12 @@
 ## People
 | Function | Description | Implemented |
 |----------|-------------|-------------|
-| People/GetFriendsByStrength | Gets friends sorted by connection strength | ❌ |
+| People/GetFriendsByStrength | Gets friends sorted by connection strength | ✅ |
 | People/GetPersonInfoBasic | Gets basic information about a person | ❌ |
 | People/UpdateAttachment | Updates a person's attachment data | ❌ |
 | People/GetPersonInfo | Gets detailed information about a person | ✅ |
 | People/GetPersonFlagStatus | Gets flag status for a person | ✅ |
+| People/AddFriend | Adds a friend to a person | ✅ |
 
 ## User Authentication
 | Function | Description | Implemented |

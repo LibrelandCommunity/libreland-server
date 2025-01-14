@@ -1,9 +1,10 @@
 import { Elysia, t } from 'elysia'
 import * as path from "node:path"
-import { personMetadataOps, areaInfoMetadataOps } from '../../db'
+import { personMetadataOps, areaInfoMetadataOps, userMetadataOps } from '../../db'
 import friendsData from '../../mock/friends.json'
 import { HoldGeometryRequest } from '../../types/geometry'
 import { Editor } from '../../types/area'
+import { UserSession } from '../../types/user'
 
 // Hold geometry storage
 // TODO: Implement proper storage solution
@@ -22,20 +23,84 @@ export const createPersonRoutes = () => {
       }
     )
     .get("person/friendsbystr",
-      async ({ query: { userId } }) => {
-        const friends = personMetadataOps.getFriendsByStrength(userId);
-        return {
-          online: {
-            friends: friends.filter(f => f.isOnline)
-          },
-          offline: {
-            friends: friends.filter(f => !f.isOnline)
+      async ({ cookie: { s } }) => {
+        try {
+          // Get user ID from session
+          if (!s.value) {
+            console.error("No session found");
+            return new Response("Unauthorized", { status: 401 });
           }
+
+          const session = JSON.parse(s.value) as UserSession;
+          if (!session?.id) {
+            console.error("Invalid session:", session);
+            return new Response("Unauthorized", { status: 401 });
+          }
+
+          // Get user's person ID from user metadata
+          const user = userMetadataOps.findById(session.id);
+          if (!user?.person_id) {
+            console.error("No person ID found for user:", session.id);
+            return new Response("User not found", { status: 404 });
+          }
+
+          const friends = personMetadataOps.getFriendsByStrength(user.person_id);
+
+          const formattedFriends = friends.map(f => ({
+            lastActivityOn: f.last_activity_on || new Date().toISOString(),
+            statusText: f.status_text || "",
+            screenName: f.screen_name,
+            id: f.id,
+            isOnline: f.isOnline,
+            strength: f.strength
+          }));
+
+          const response = {
+            online: {
+              friends: formattedFriends.filter(f => f.isOnline)
+            },
+            offline: {
+              friends: formattedFriends.filter(f => !f.isOnline)
+            }
+          };
+          return response;
+        } catch (e) {
+          console.error("Error getting friends:", e);
+          return new Response("Error getting friends", { status: 500 });
+        }
+      }
+    )
+    .post("person/addfriend",
+      async ({ cookie: { s }, body: { id } }) => {
+        try {
+          // Get user ID from session
+          if (!s.value) {
+            return new Response("Unauthorized", { status: 401 });
+          }
+
+          const session = JSON.parse(s.value) as UserSession;
+          if (!session?.id) {
+            return new Response("Unauthorized", { status: 401 });
+          }
+
+          // Get user's person ID from user metadata
+          const user = userMetadataOps.findById(session.id);
+          if (!user?.person_id) {
+            return new Response("User not found", { status: 404 });
+          }
+
+          // Add friend relationship
+          personMetadataOps.insertFriend(user.person_id, id);
+
+          return { ok: true };
+        } catch (e) {
+          console.error("Error adding friend:", e);
+          return new Response("Error adding friend", { status: 500 });
         }
       },
       {
-        query: t.Object({
-          userId: t.String()
+        body: t.Object({
+          id: t.String()
         })
       }
     )

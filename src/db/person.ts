@@ -67,7 +67,7 @@ export function initializePersonTables(db: Database) {
     CREATE TABLE IF NOT EXISTS person_friends (
       person_id TEXT NOT NULL,
       friend_id TEXT NOT NULL,
-      strength INTEGER,
+      strength INTEGER DEFAULT 1,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY(person_id, friend_id),
       FOREIGN KEY(person_id) REFERENCES person_metadata(id),
