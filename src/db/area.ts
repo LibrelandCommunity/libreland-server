@@ -20,7 +20,7 @@ export interface AreaMetadataOperations {
   update: (params: AreaMetadata) => void;
   findById: (id: string) => AreaMetadata | undefined;
   findByUrlName: (urlName: string) => AreaMetadata | undefined;
-  search: (term: string, limit: number) => AreaMetadata[];
+  search: (term: string, limit: number) => { areas: AreaMetadata[]; ownPrivateAreas: AreaMetadata[] };
   updatePlayerCount: (id: string, count: number) => void;
   delete: (id: string) => void;
 }
@@ -131,13 +131,68 @@ export function createAreaOperations(db: Database): AreaMetadataOperations {
 
     search: (term, limit) => {
       const stmt = db.prepare(`
-        SELECT * FROM area_metadata
-        WHERE name LIKE ?
-        AND (is_private = false OR is_private IS NULL)
-        ORDER BY player_count DESC
+        SELECT i.id, i.name, i.description, COALESCE(m.url_name, i.url_name) as url_name,
+               COALESCE(m.creator_id, i.creator_id) as creator_id,
+               COALESCE(m.created_at, i.created_at) as created_at,
+               COALESCE(m.updated_at, i.updated_at) as updated_at,
+               COALESCE(m.is_private, false) as is_private,
+               COALESCE(m.player_count, 0) as player_count,
+               i.editors
+        FROM area_info_metadata i
+        LEFT JOIN area_metadata m ON i.id = m.id
+        WHERE (i.name LIKE ? OR i.description LIKE ?)
+        ORDER BY COALESCE(m.player_count, 0) DESC
         LIMIT ?
       `);
-      return stmt.all(`%${term}%`, limit) as AreaMetadata[];
+      const searchTerm = `%${term}%`;
+      const rawResults = stmt.all(searchTerm, searchTerm, limit) as Array<{
+        id: string;
+        name: string;
+        description: string | null;
+        url_name: string;
+        creator_id: string | null;
+        created_at: number | null;
+        updated_at: number | null;
+        is_private: boolean;
+        player_count: number;
+        editors: string;
+      }>;
+
+      // Split results into public and private owned areas
+      const publicAreas: AreaMetadata[] = [];
+      const ownPrivateAreas: AreaMetadata[] = [];
+
+      for (const raw of rawResults) {
+        const editors = JSON.parse(raw.editors || '[]');
+        const isOwner = editors.some((editor: any) => editor.isOwner);
+        const isNonOwnerEditor = editors.some((editor: any) => !editor.isOwner);
+
+        const area: AreaMetadata = {
+          id: raw.id,
+          name: raw.name,
+          description: raw.description || undefined,
+          urlName: raw.url_name,
+          creatorId: raw.creator_id || undefined,
+          createdAt: raw.created_at || undefined,
+          updatedAt: raw.updated_at || undefined,
+          isPrivate: raw.is_private,
+          playerCount: raw.player_count
+        };
+
+        if (raw.is_private) {
+          if (isOwner || isNonOwnerEditor) {
+            ownPrivateAreas.push(area);
+          }
+          // Skip private areas where we're neither owner nor editor
+        } else {
+          publicAreas.push(area);
+        }
+      }
+
+      return {
+        areas: publicAreas,
+        ownPrivateAreas
+      };
     },
 
     updatePlayerCount: (id, count) => {

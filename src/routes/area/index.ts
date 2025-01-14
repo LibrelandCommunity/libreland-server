@@ -8,12 +8,21 @@ type PartialAreaList = Omit<typeof _areaListData, 'featured'>
 const areaListData = _areaListData as PartialAreaList
 
 const searchArea = (term: string) => {
-  return areaMetadataOps.search(term, 50).map(row => ({
-    id: row.id,
-    name: row.name,
-    description: row.description || '',
-    playerCount: row.playerCount || 0
-  }))
+  const searchResults = areaMetadataOps.search(term, 50)
+  return {
+    areas: searchResults.areas.map(area => ({
+      id: area.id,
+      name: area.name,
+      description: area.description,
+      playerCount: area.playerCount || 0
+    })),
+    ownPrivateAreas: searchResults.ownPrivateAreas.map(area => ({
+      id: area.id,
+      name: area.name,
+      description: area.description,
+      playerCount: area.playerCount || 0
+    }))
+  }
 }
 
 const findAreaByUrlName = (areaUrlName: string): string | undefined => {
@@ -128,11 +137,12 @@ export const createAreaRoutes = () => {
           return result;
         }
 
-        const matchingAreas = searchArea(term)
-        return {
-          areas: matchingAreas,
-          ownPrivateAreas: []
-        }
+        console.log("term", term)
+
+        const searchResults = searchArea(term)
+
+        console.log("searchResults", searchResults)
+        return searchResults // Return the complete object with both areas and ownPrivateAreas
       },
       { body: t.Object({ term: t.String(), byCreatorId: t.Optional(t.String()) }) }
     )
