@@ -37,7 +37,7 @@
 | Function | Description | Implemented |
 |----------|-------------|-------------|
 | User/StartAuthenticatedSession | Starts a new authenticated session | ✅ |
-| User/RegisterUsageMode | Registers current usage mode (Desktop/VR) | ❌ |
+| User/RegisterUsageMode | Registers current usage mode (Desktop/VR) | ✅ |
 
 ## Things
 | Function | Description | Implemented |

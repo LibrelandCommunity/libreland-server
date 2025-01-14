@@ -10,6 +10,16 @@ const holdGeoMap: Record<string, any> = {}
 
 export const createPersonRoutes = () => {
   return new Elysia()
+    .get("person/registerusagemode",
+      async ({ query: { inDesktopMode } }) => {
+        return { ok: true }
+      },
+      {
+        query: t.Object({
+          inDesktopMode: t.String()
+        })
+      }
+    )
     .get("person/friendsbystr",
       () => friendsData
     )
@@ -55,5 +65,11 @@ export const createPersonRoutes = () => {
           geometry: t.Any()
         })
       }
+    )
+    .post("/person/getflag",
+      async ({ body: { id } }: { body: { id: string } }) => {
+        return { isFlagged: false }
+      },
+      { body: t.Object({ id: t.String() }) }
     )
 }
