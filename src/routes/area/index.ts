@@ -50,6 +50,8 @@ export const createAreaRoutes = () => {
 
         if (!targetAreaId && areaUrlName) {
           const formattedUrlName = formatUrlName(areaUrlName)
+          console.log("areaUrlName", areaUrlName)
+          console.log("formattedUrlName", formattedUrlName)
           // Try area_info_metadata first
           const infoArea = areaInfoMetadataOps.findByUrlName(formattedUrlName)
           if (infoArea) {
@@ -61,23 +63,68 @@ export const createAreaRoutes = () => {
             if (metaArea) {
               targetAreaId = metaArea.id
               console.log("client asked to load", areaUrlName, " - found in area metadata:", targetAreaId)
+            } else {
+              console.error("couldn't find area with urlName", areaUrlName, "in database")
+              return Response.json({ "ok": false, "_reasonDenied": "Private", "serveTime": 13 }, { status: 200 })
             }
           }
         }
 
-        if (targetAreaId) {
-          const areaLoadData = areaLoadDataOps.findByAreaId(targetAreaId)
-          if (areaLoadData) {
-            return Response.json(JSON.parse(areaLoadData.rawData))
-          }
-          console.error("couldn't find area", targetAreaId, "in database")
-        } else if (areaUrlName) {
-          console.error("couldn't find area with urlName", areaUrlName, "in database")
-        } else {
+        if (!targetAreaId) {
           console.error("client asked for neither an areaId or an areaUrlName")
+          return Response.json({ "ok": false, "_reasonDenied": "Private", "serveTime": 13 }, { status: 200 })
         }
 
-        return Response.json({ "ok": false, "_reasonDenied": "Private", "serveTime": 13 }, { status: 200 })
+        console.log("targetAreaId", targetAreaId)
+        const areaLoadData = areaLoadDataOps.findByAreaId(targetAreaId)
+        if (!areaLoadData) {
+          console.error("couldn't find area load data for", targetAreaId, "in database")
+          return Response.json({ "ok": false, "_reasonDenied": "Private", "serveTime": 13 }, { status: 200 })
+        }
+
+        try {
+          const loadData = JSON.parse(areaLoadData.rawData)
+
+          // If the original data is a denial response, return it as-is
+          if (!loadData.ok) {
+            return Response.json(loadData)
+          }
+
+          // Add required fields that might be missing
+          const areaInfo = areaInfoMetadataOps.findById(targetAreaId)
+          const areaMetadata = areaMetadataOps.findById(targetAreaId)
+
+          // Keep the original placements data to preserve all fields (S, A, etc.)
+          const placements = loadData.placements || []
+
+          // If we don't have an areaKey, we can't proceed with a successful response
+          if (!loadData.areaKey) {
+            return Response.json({ "ok": false, "_reasonDenied": "Private", "serveTime": 13 }, { status: 200 })
+          }
+
+          return Response.json({
+            ok: true,
+            areaId: targetAreaId,
+            areaName: areaInfo?.name || areaMetadata?.name || loadData.areaName,
+            areaKey: loadData.areaKey,
+            areaCreatorId: areaInfo?.creatorId || areaMetadata?.creatorId || loadData.areaCreatorId,
+            isPrivate: areaMetadata?.isPrivate || loadData.isPrivate || false,
+            isZeroGravity: areaInfo?.isZeroGravity || loadData.isZeroGravity || false,
+            hasFloatingDust: areaInfo?.hasFloatingDust || loadData.hasFloatingDust || false,
+            isCopyable: areaInfo?.isCopyable || loadData.isCopyable || false,
+            onlyOwnerSetsLocks: loadData.onlyOwnerSetsLocks || false,
+            isExcluded: areaInfo?.isExcluded || loadData.isExcluded || false,
+            environmentChangersJSON: loadData.environmentChangersJSON || "{\"environmentChangers\":[]}",
+            requestorIsEditor: loadData.requestorIsEditor || false,
+            requestorIsListEditor: loadData.requestorIsListEditor || false,
+            requestorIsOwner: loadData.requestorIsOwner || false,
+            placements,
+            serveTime: 13
+          })
+        } catch (e) {
+          console.error("Error parsing area load data for", targetAreaId, ":", e)
+          return Response.json({ "ok": false, "_reasonDenied": "Private", "serveTime": 13 }, { status: 200 })
+        }
       },
       {
         body: t.Object({
