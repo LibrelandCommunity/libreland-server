@@ -1,3 +1,5 @@
+# Libreland has merged efforts with [Echoland](https://github.com/Echoland-AL/), this repo will no longer be maintained.
+
 # Libreland Game Server
 
 This is an open source game server for the now defunct game [Anyland](https://anyland.com).
